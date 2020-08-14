@@ -1,0 +1,99 @@
+mod config;
+mod engine;
+mod frame;
+
+use config::Config;
+use glium::glutin;
+use std::time;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let config_str = std::fs::read_to_string("./config.toml")?;
+    let config: Config = toml::from_str(&config_str)?;
+
+    let events_loop = glium::glutin::event_loop::EventLoop::new();
+    let window_builder = glium::glutin::window::WindowBuilder::new()
+        .with_decorations(true)
+        .with_maximized(true)
+        .with_title(config.window.name);
+    let context_builder = glium::glutin::ContextBuilder::new();
+    let display = glium::Display::new(window_builder, context_builder, &events_loop)?;
+
+    let drawing_params = glium::DrawParameters {
+        multisampling: false,
+        blend: glium::Blend::alpha_blending(),
+        ..Default::default()
+    };
+
+    let vertex_shader_src = std::fs::read_to_string(config.shaders.vertex_path)?;
+    let fragment_shader_src = std::fs::read_to_string(config.shaders.fragment_path)?;
+    let program =
+        glium::Program::from_source(&display, &vertex_shader_src, &fragment_shader_src, None)?;
+
+    let display = frame::Frame::new(display, drawing_params, program)?;
+
+    let mut timer = time::Instant::now();
+    let mut frame_time = time::Duration::new(0, 0);
+    let max_frame_time = time::Duration::from_secs_f32(1f32 / config.window.fps);
+
+    // display.load_image(vec!["./resources/animations/guardian/idle/1.png".into()]);
+
+    let mut engine = engine::Engine::new(display)?;
+
+    events_loop.run(move |event, _, control_flow| {
+        macro_rules! exit {
+            () => {{
+                *control_flow = glutin::event_loop::ControlFlow::Exit;
+                engine.kill().unwrap();
+                return;
+            }};
+        }
+        macro_rules! kill_if_error {
+            ($e:expr) => {
+                match $e {
+                    Ok(x) => x,
+                    Err(x) => {
+                        println!("{}", x);
+                        exit!();
+                    }
+                }
+            };
+        }
+        use glutin::event::Event;
+
+        let dt = timer.elapsed();
+        timer = time::Instant::now();
+        frame_time += dt;
+
+        match event {
+            Event::WindowEvent { event, .. } => {
+                use glutin::event::{KeyboardInput, VirtualKeyCode, WindowEvent};
+                match event {
+                    WindowEvent::CloseRequested => {
+                        exit!();
+                    }
+                    WindowEvent::KeyboardInput { input, .. } => match input {
+                        KeyboardInput {
+                            virtual_keycode: Some(VirtualKeyCode::Escape),
+                            ..
+                        } => exit!(),
+                        _ => {}
+                    },
+                    WindowEvent::MouseInput {
+                        button: _,
+                        state: _,
+                        ..
+                    } => {}
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+
+        if frame_time > max_frame_time {
+            kill_if_error!(engine.step(&frame_time));
+            frame_time = time::Duration::new(0, 0);
+        }
+    });
+
+    Ok(())
+}

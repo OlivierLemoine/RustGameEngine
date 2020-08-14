@@ -1,0 +1,1 @@
+objects = [{ path = "./resources/prefab/guardian.toml", position = [0, 0, 0] }]

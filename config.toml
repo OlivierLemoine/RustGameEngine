@@ -1,0 +1,13 @@
+[window]
+name = "Game"
+width = 500
+height = 500
+fps = 60
+
+[font]
+path = "./resources/font/arial.ttf"
+height = 300
+
+[shaders]
+vertex_path = "./shaders/vertex_shader.glsl"
+fragment_path = "./shaders/fragment_shader.glsl"
