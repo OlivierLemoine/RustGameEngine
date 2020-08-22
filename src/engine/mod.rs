@@ -13,19 +13,27 @@ pub mod prelude {
 pub struct Engine<'a> {
     display: crate::frame::Frame<'a>,
     objects: Vec<loader::Object>,
+    scene_path: String,
 }
 
 impl<'a> Engine<'a> {
-    pub fn new<'b>(
+    pub fn new(
         mut frame: crate::frame::Frame<'a>,
-        scene_path: &'b str,
+        scene_path: String,
     ) -> Result<Engine<'a>, Box<dyn std::error::Error>> {
-        let objects = loader::load_scene(scene_path, &mut frame)?;
+        let objects = loader::load_scene(&scene_path, &mut frame)?;
         println!("{:?}", objects);
         Ok(Engine {
             display: frame,
             objects,
+            scene_path,
         })
+    }
+    pub fn reload(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let objects = loader::load_scene(&self.scene_path, &mut self.display)?;
+        println!("{:?}", objects);
+        self.objects = objects;
+        Ok(())
     }
     pub fn step(&mut self, dt: &std::time::Duration) -> Result<(), Box<dyn std::error::Error>> {
         for object in &mut self.objects {

@@ -54,7 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // display.load_image(vec!["./resources/animations/guardian/idle/1.png".into()]);
 
-    let mut engine = engine::Engine::new(display, &config.scene.path)?;
+    let mut engine = engine::Engine::new(display, config.scene.path)?;
 
     events_loop.run(move |event, _, control_flow| {
         macro_rules! exit {
@@ -93,6 +93,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             virtual_keycode: Some(VirtualKeyCode::Escape),
                             ..
                         } => exit!(),
+                        KeyboardInput {
+                            virtual_keycode: Some(VirtualKeyCode::R),
+                            ..
+                        } => kill_if_error!(engine.reload()),
                         _ => {}
                     },
                     WindowEvent::MouseInput {
