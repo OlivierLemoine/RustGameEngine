@@ -25,11 +25,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let vertex_shader_src = std::fs::read_to_string(config.shaders.vertex_path)?;
+
     let fragment_shader_src = std::fs::read_to_string(config.shaders.fragment_path)?;
-    let program =
+    let program_texture =
         glium::Program::from_source(&display, &vertex_shader_src, &fragment_shader_src, None)?;
 
-    let display = frame::Frame::new(display, drawing_params, program)?;
+    let fragment_color_shader_src = std::fs::read_to_string(config.shaders.fragment_color_path)?;
+    let program_color = glium::Program::from_source(
+        &display,
+        &vertex_shader_src,
+        &fragment_color_shader_src,
+        None,
+    )?;
+
+    let display = frame::Frame::new(
+        display,
+        drawing_params,
+        frame::Program {
+            texture: program_texture,
+            color: program_color,
+        },
+        config.scene.view_size,
+    )?;
 
     let mut timer = time::Instant::now();
     let mut frame_time = time::Duration::new(0, 0);
@@ -37,7 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // display.load_image(vec!["./resources/animations/guardian/idle/1.png".into()]);
 
-    let mut engine = engine::Engine::new(display)?;
+    let mut engine = engine::Engine::new(display, &config.scene.path)?;
 
     events_loop.run(move |event, _, control_flow| {
         macro_rules! exit {
@@ -95,5 +112,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    Ok(())
+    // Ok(())
 }

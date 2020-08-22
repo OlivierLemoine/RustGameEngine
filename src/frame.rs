@@ -34,10 +34,15 @@ pub struct Image {
     pub texture: usize,
 }
 
+pub struct Program {
+    pub texture: glium::Program,
+    pub color: glium::Program,
+}
+
 pub struct Frame<'a> {
     display: glium::Display,
     parameters: glium::DrawParameters<'a>,
-    program: glium::Program,
+    program: Program,
     frame: glium::Frame,
     vertex_buffer: glium::VertexBuffer<Vertex>,
     indices_buffer: glium::index::IndexBuffer<u16>,
@@ -47,13 +52,16 @@ pub struct Frame<'a> {
     images: Vec<glium::texture::Texture2d>,
     next_index: usize,
     current_frame_dim: (u32, u32),
+    view_offset: [f32; 2],
+    view_scale: [f32; 2],
 }
 
 impl<'a> Frame<'a> {
     pub fn new(
         display: glium::Display,
         parameters: glium::DrawParameters<'a>,
-        program: glium::Program,
+        program: Program,
+        view_size: super::config::ViewSize,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let vertex_buffer = glium::VertexBuffer::<Vertex>::new(&display, &SQUARE)?;
         let indices_buffer = glium::index::IndexBuffer::new(
@@ -79,6 +87,14 @@ impl<'a> Frame<'a> {
             images: vec![],
             next_index: 0,
             current_frame_dim,
+            view_offset: [
+                (view_size.x_max + view_size.x_min) / 2.0,
+                (view_size.y_max + view_size.y_min) / 2.0,
+            ],
+            view_scale: [
+                2.0 / (view_size.x_max - view_size.x_min),
+                2.0 / (view_size.y_max - view_size.y_min),
+            ],
         })
     }
     pub fn load_image(&mut self, mut paths: Vec<String>) -> Vec<usize> {
@@ -119,6 +135,28 @@ impl<'a> Frame<'a> {
         self.next_index += nb_new_images;
         (start_index..(start_index + nb_new_images)).collect()
     }
+    pub fn draw_color(
+        &mut self,
+        position: [f32; 2],
+        scale: [f32; 2],
+        color: [f32; 4],
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.frame.draw(
+            &self.vertex_buffer,
+            &self.indices_buffer,
+            &self.program.color,
+            &uniform! {
+                obj_position: position,
+                obj_scale: scale,
+                c: color,
+                window_ratio: self.current_frame_dim.0 / self.current_frame_dim.1,
+                view_offset: self.view_offset,
+                view_scale: self.view_scale,
+            },
+            &self.parameters,
+        )?;
+        Ok(())
+    }
     pub fn draw_image(&mut self, image: Image) -> Result<(), Box<dyn std::error::Error>> {
         println!("{:?}", self.display.get_framebuffer_dimensions());
         let img = self
@@ -128,12 +166,14 @@ impl<'a> Frame<'a> {
         self.frame.draw(
             &self.vertex_buffer,
             &self.indices_buffer,
-            &self.program,
+            &self.program.texture,
             &uniform! {
                 obj_position: image.position,
                 obj_scale: image.scale,
                 tex: img,
                 window_ratio: self.current_frame_dim.0 / self.current_frame_dim.1,
+                view_offset: self.view_offset,
+                view_scale: self.view_scale,
             },
             &self.parameters,
         )?;

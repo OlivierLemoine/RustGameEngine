@@ -11,3 +11,12 @@ height = 300
 [shaders]
 vertex_path = "./shaders/vertex_shader.glsl"
 fragment_path = "./shaders/fragment_shader.glsl"
+fragment_color_path = "./shaders/fragment_color_shader.glsl"
+
+[scene]
+path = "./editor/editor.toml"
+[scene.view_size]
+x_min = -1
+y_min = -1
+x_max = 1
+y_max = 1

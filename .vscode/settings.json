@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "*.scene": "json"
+    },
+    "Lua.diagnostics.globals": [
+        "transform",
+        "Transform"
+    ],
+    "Lua.diagnostics.severity": [
+    ]
+}

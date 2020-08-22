@@ -16,8 +16,11 @@ pub struct Engine<'a> {
 }
 
 impl<'a> Engine<'a> {
-    pub fn new(mut frame: crate::frame::Frame) -> Result<Engine, Box<dyn std::error::Error>> {
-        let objects = loader::load_scene("./resources/scenes/scene.toml".into(), &mut frame)?;
+    pub fn new<'b>(
+        mut frame: crate::frame::Frame<'a>,
+        scene_path: &'b str,
+    ) -> Result<Engine<'a>, Box<dyn std::error::Error>> {
+        let objects = loader::load_scene(scene_path, &mut frame)?;
         println!("{:?}", objects);
         Ok(Engine {
             display: frame,
@@ -25,21 +28,32 @@ impl<'a> Engine<'a> {
         })
     }
     pub fn step(&mut self, dt: &std::time::Duration) -> Result<(), Box<dyn std::error::Error>> {
-        for object in &self.objects {
-            match (&object.transform, &object.sprite) {
-                (Some(t), Some(s)) => {
-                    self.display.draw_image(crate::frame::Image {
-                        position: t.position.to_array(),
-                        scale: t.scale.to_array(),
-                        texture: *s
-                            .animations
-                            .get(s.animations.keys().next().unwrap())
-                            .unwrap()
-                            .first()
-                            .unwrap(),
-                    });
+        for object in &mut self.objects {
+            if let Some(transform) = &mut object.transform {
+                if let Some(rigidbody) = &mut object.rigidbody {
+                    systems::physics::gravity(transform, rigidbody, dt);
                 }
-                _ => {}
+
+                if let Some(sprite) = &object.sprite {
+                    if let Some(color) = &sprite.color {
+                        self.display.draw_color(
+                            transform.position.to_array(),
+                            transform.scale.to_array(),
+                            color.clone(),
+                        );
+                    } else {
+                        self.display.draw_image(crate::frame::Image {
+                            position: transform.position.to_array(),
+                            scale: transform.scale.to_array(),
+                            texture: *sprite
+                                .animations
+                                .get(sprite.animations.keys().next().unwrap())
+                                .unwrap()
+                                .first()
+                                .unwrap(),
+                        })?;
+                    }
+                }
             }
         }
         self.display.new_frame()
