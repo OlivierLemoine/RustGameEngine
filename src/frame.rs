@@ -46,6 +46,7 @@ pub struct Frame<'a> {
     done_loading: Arc<Mutex<bool>>,
     images: Vec<glium::texture::Texture2d>,
     next_index: usize,
+    current_frame_dim: (u32, u32),
 }
 
 impl<'a> Frame<'a> {
@@ -63,6 +64,8 @@ impl<'a> Frame<'a> {
         let mut frame = display.draw();
         frame.clear_color(1.0, 1.0, 1.0, 1.0);
 
+        let current_frame_dim = display.get_framebuffer_dimensions();
+
         Ok(Frame {
             parameters,
             display,
@@ -75,6 +78,7 @@ impl<'a> Frame<'a> {
             done_loading: Arc::new(Mutex::new(true)),
             images: vec![],
             next_index: 0,
+            current_frame_dim,
         })
     }
     pub fn load_image(&mut self, mut paths: Vec<String>) -> Vec<usize> {
@@ -116,6 +120,7 @@ impl<'a> Frame<'a> {
         (start_index..(start_index + nb_new_images)).collect()
     }
     pub fn draw_image(&mut self, image: Image) -> Result<(), Box<dyn std::error::Error>> {
+        println!("{:?}", self.display.get_framebuffer_dimensions());
         let img = self
             .images
             .get(image.texture)
@@ -128,7 +133,7 @@ impl<'a> Frame<'a> {
                 obj_position: image.position,
                 obj_scale: image.scale,
                 tex: img,
-                // window_size: window_size,
+                window_ratio: self.current_frame_dim.0 / self.current_frame_dim.1,
             },
             &self.parameters,
         )?;
@@ -136,6 +141,8 @@ impl<'a> Frame<'a> {
     }
     pub fn new_frame(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         self.frame.set_finish()?;
+
+        self.current_frame_dim = self.display.get_framebuffer_dimensions();
 
         while let Some(img) = { self.images_to_add.lock().unwrap().pop() } {
             let dims = img.dimensions();

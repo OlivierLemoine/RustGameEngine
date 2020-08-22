@@ -5,14 +5,22 @@ out vec4 color;
 
 uniform vec2 obj_scale;
 uniform sampler2D tex;
+uniform float window_ratio;
 
-// #define DEBUG
+// #define DEBUG 0
 #define BOUNDING_BOX_SIZE.001
 #define BOUNDING_BOX_COLOR vec4(0.,.4471,0.,.918)
 
 void main(){
     color=texture(tex,v_tex_coords*sign(obj_scale));
-    
+
+    // if (window_ratio > 1.0) {
+    //     float centered_coord_x = v_tex_coords.x * 2.0 - 1.0;
+    //     if (abs(centered_coord_x) > 1.0 / window_ratio) {
+    //         color = vec4(0.0, 1.0, 1.0, 1.0);
+    //     }
+    // }
+
     #if DEBUG
     
     vec2 bounding_box_size=vec2(1/obj_scale.x,1/obj_scale.y)*BOUNDING_BOX_SIZE;
