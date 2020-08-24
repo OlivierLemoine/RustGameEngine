@@ -6,6 +6,10 @@ pub struct Object {
     pub transform: Option<Transform>,
     pub sprite: Option<Sprite>,
     pub rigidbody: Option<Rigidbody>,
+    #[serde(skip)]
+    pub parent: Option<usize>,
+    #[serde(skip)]
+    pub children: Vec<usize>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -19,12 +23,18 @@ pub struct SceneObject {
     // position:
 }
 #[derive(Deserialize, Debug)]
-pub struct Resources {
-    sprite: Sprites,
+pub struct Builder {
+    sprite: Option<Sprites>,
+    children: Option<Children>,
 }
 #[derive(Deserialize, Debug)]
 pub struct Sprites {
-    animations: Vec<Image>,
+    animations: Option<Vec<Image>>,
+}
+#[derive(Deserialize, Debug)]
+pub struct Children {
+    objects: Option<Vec<SceneObject>>,
+    scene: Option<Scene>,
 }
 #[derive(Deserialize, Debug)]
 pub struct Image {
@@ -39,50 +49,76 @@ pub fn load_scene(
     let f = std::fs::read_to_string(path)?;
     let scene: Scene = toml::from_str(&f)?;
 
-    let objects = scene
-        .objects
-        .into_iter()
-        .map(|v: SceneObject| {
-            let mut image_name_to_index = std::collections::HashMap::<String, Vec<usize>>::new();
-            let f = std::fs::read_to_string(v.path)?;
-            let mut o: Object = toml::from_str(&f)?;
-            if let Some(sprite) = &mut o.sprite {
-                if sprite.color.is_none() {
-                    let animations = toml::from_str::<Resources>(&f)?.sprite.animations;
+    let mut objects = vec![];
 
-                    for Image { name, path } in animations {
-                        let reg = regex::Regex::new("\\{(\\d+)-(\\d+)\\}")?;
-                        let caps = reg.captures(&path);
-                        let indices = match caps {
-                            Some(caps) => {
-                                //
-                                let start = caps.get(1).unwrap().as_str().parse::<u32>()?;
-                                let end = caps.get(2).unwrap().as_str().parse::<u32>()?;
-                                // println!("{} - {}", start, end);
+    for o in scene.objects {
+        objects = load_object(&o.path, objects, None, frame)?;
+    }
 
-                                let paths = (start..=end)
-                                    .map(|v| {
-                                        path.clone().replace(
-                                            &format!("{{{}-{}}}", start, end),
-                                            &v.to_string(),
-                                        )
-                                    })
-                                    .collect();
+    Ok(objects)
+}
 
-                                frame.load_image(paths)
-                            }
-                            None => frame.load_image(vec![path]),
-                        };
-                        image_name_to_index.insert(name, indices);
-                    }
+pub fn load_object(
+    path: &str,
+    mut objects: Vec<Object>,
+    parent: Option<usize>,
+    frame: &mut crate::frame::Frame,
+) -> Result<Vec<Object>, Box<dyn std::error::Error>> {
+    let file = std::fs::read_to_string(path)?;
 
-                    sprite.animations = image_name_to_index;
-                }
-            }
+    let mut object: Object = toml::from_str(&file)?;
+    object.parent = parent;
 
-            Ok(o)
-        })
-        .collect::<Result<Vec<_>, Box<dyn std::error::Error>>>()?;
+    let index = objects.len();
+
+    objects.push(object);
+
+    let builder: Builder = toml::from_str(&file)?;
+
+    if let Some(cs) = builder
+        .children
+        .map(|c| c.scene.map(|s| s.objects).or(c.objects))
+        .flatten()
+    {
+        for c in cs {
+            let i = objects.len();
+            objects[index].children.push(i);
+            objects = load_object(&c.path, objects, Some(index), frame)?;
+        }
+    }
+
+    // builder.sprite.map(|s| {
+    //     s.animations.map(|a| {
+    //         let mut image_name_to_index = std::collections::HashMap::<String, Vec<usize>>::new();
+    //         for Image { name, path } in a {
+    //             let reg = regex::Regex::new("\\{(\\d+)-(\\d+)\\}").ok()?;
+    //             let caps = reg.captures(&path);
+    //             let indices = match caps {
+    //                 Some(caps) => {
+    //                     //
+    //                     let start = caps.get(1)?.as_str().parse::<u32>().ok()?;
+    //                     let end = caps.get(2)?.as_str().parse::<u32>().ok()?;
+    //                     // println!("{} - {}", start, end);
+
+    //                     let paths = (start..=end)
+    //                         .map(|v| {
+    //                             path.clone()
+    //                                 .replace(&format!("{{{}-{}}}", start, end), &v.to_string())
+    //                         })
+    //                         .collect();
+
+    //                     frame.load_image(paths)
+    //                 }
+    //                 None => frame.load_image(vec![path]),
+    //             };
+    //             image_name_to_index.insert(name, indices);
+    //         }
+    //         objects[index]
+    //             .sprite
+    //             .map(|mut s| s.animations = image_name_to_index);
+    //         Some(())
+    //     })
+    // });
 
     Ok(objects)
 }

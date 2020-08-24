@@ -36,23 +36,39 @@ impl<'a> Engine<'a> {
         Ok(())
     }
     pub fn step(&mut self, dt: &std::time::Duration) -> Result<(), Box<dyn std::error::Error>> {
-        for object in &mut self.objects {
-            if let Some(transform) = &mut object.transform {
-                if let Some(rigidbody) = &mut object.rigidbody {
-                    systems::physics::gravity(transform, rigidbody, dt);
+        for index in 0..self.objects.len() {
+            if self.objects[index].transform.is_some() {
+                if self.objects[index].rigidbody.is_some() {
+                    let obj = &mut self.objects[index];
+                    systems::physics::gravity(
+                        obj.transform.as_mut().unwrap(),
+                        obj.rigidbody.as_mut().unwrap(),
+                        dt,
+                    );
                 }
+                if self.objects[index].sprite.is_some() {
+                    let obj = &self.objects[index];
+                    let scale = obj.transform.as_ref().unwrap().scale;
+                    let mut position = obj.transform.as_ref().unwrap().position;
 
-                if let Some(sprite) = &object.sprite {
+                    let mut parent_index = obj.parent;
+                    while let Some(parent) = (|| Some(&self.objects[parent_index?]))() {
+                        parent.transform.as_ref().map(|t| position += t.position);
+                        parent_index = parent.parent;
+                    }
+
+                    let sprite = obj.sprite.as_ref().unwrap();
+
                     if let Some(color) = &sprite.color {
                         self.display.draw_color(
-                            transform.position.to_array(),
-                            transform.scale.to_array(),
+                            position.to_array(),
+                            scale.to_array(),
                             color.clone(),
                         );
                     } else {
                         self.display.draw_image(crate::frame::Image {
-                            position: transform.position.to_array(),
-                            scale: transform.scale.to_array(),
+                            position: position.to_array(),
+                            scale: scale.to_array(),
                             texture: *sprite
                                 .animations
                                 .get(sprite.animations.keys().next().unwrap())
