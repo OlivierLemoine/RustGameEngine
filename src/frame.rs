@@ -195,8 +195,9 @@ impl<'a> Frame<'a> {
         self.frame.clear_color(1.0, 1.0, 1.0, 1.0);
         Ok(())
     }
-    pub fn kill(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.frame.set_finish()?;
-        Ok(())
+}
+impl<'a> Drop for Frame<'a> {
+    fn drop(&mut self) {
+        self.frame.set_finish();
     }
 }

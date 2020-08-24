@@ -66,7 +66,4 @@ impl<'a> Engine<'a> {
         }
         self.display.new_frame()
     }
-    pub fn kill(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.display.kill()
-    }
 }

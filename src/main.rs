@@ -60,7 +60,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         macro_rules! exit {
             () => {{
                 *control_flow = glutin::event_loop::ControlFlow::Exit;
-                engine.kill().unwrap();
                 return;
             }};
         }
