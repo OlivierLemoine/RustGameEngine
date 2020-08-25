@@ -56,6 +56,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut engine = engine::Engine::new(display, config.scene.path)?;
 
+    let mut mouse_position = engine::prelude::Vector::zero();
+
     events_loop.run(move |event, _, control_flow| {
         macro_rules! exit {
             () => {{
@@ -81,31 +83,48 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         frame_time += dt;
 
         match event {
-            Event::WindowEvent { event, .. } => {
-                use glutin::event::{KeyboardInput, VirtualKeyCode, WindowEvent};
-                match event {
-                    WindowEvent::CloseRequested => {
-                        exit!();
-                    }
-                    WindowEvent::KeyboardInput { input, .. } => match input {
-                        KeyboardInput {
-                            virtual_keycode: Some(VirtualKeyCode::Escape),
-                            ..
-                        } => exit!(),
-                        KeyboardInput {
-                            virtual_keycode: Some(VirtualKeyCode::R),
-                            ..
-                        } => kill_if_error!(engine.reload()),
-                        _ => {}
-                    },
-                    WindowEvent::MouseInput {
-                        button: _,
-                        state: _,
-                        ..
-                    } => {}
-                    _ => {}
+            glutin::event::Event::WindowEvent { event, .. } => match event {
+                glutin::event::WindowEvent::CloseRequested => {
+                    exit!();
                 }
-            }
+                glutin::event::WindowEvent::KeyboardInput { input, .. } => match input {
+                    glutin::event::KeyboardInput {
+                        virtual_keycode: Some(glutin::event::VirtualKeyCode::Escape),
+                        ..
+                    } => exit!(),
+                    glutin::event::KeyboardInput {
+                        virtual_keycode: Some(glutin::event::VirtualKeyCode::R),
+                        ..
+                    } => kill_if_error!(engine.reload()),
+                    _ => {}
+                },
+                glutin::event::WindowEvent::MouseInput { button, state, .. } => {
+                    match (button, state) {
+                        (
+                            glutin::event::MouseButton::Left,
+                            glutin::event::ElementState::Pressed,
+                        ) => {
+                            let window_size =
+                                engine.display.display.gl_window().window().inner_size();
+                            engine.event_pool.push(engine::Event::LeftClickOn(
+                                mouse_position
+                                    / engine::prelude::Vector::new(
+                                        window_size.width as f32,
+                                        window_size.height as f32,
+                                    ),
+                            ));
+
+                            println!("{:?}", engine.event_pool);
+                        }
+                        _ => {}
+                    }
+                }
+                glutin::event::WindowEvent::CursorMoved { position, .. } => {
+                    mouse_position =
+                        engine::prelude::Vector::new(position.x as f32, position.y as f32);
+                }
+                _ => {}
+            },
             _ => {}
         }
 
