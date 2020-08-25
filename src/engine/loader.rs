@@ -6,6 +6,7 @@ pub struct Object {
     pub transform: Option<Transform>,
     pub sprite: Option<Sprite>,
     pub rigidbody: Option<Rigidbody>,
+    pub script: Option<Script>,
     #[serde(skip)]
     pub parent: Option<usize>,
     #[serde(skip)]
@@ -26,10 +27,15 @@ pub struct SceneObject {
 pub struct Builder {
     sprite: Option<Sprites>,
     children: Option<Children>,
+    script: Option<ScriptLoader>,
 }
 #[derive(Deserialize, Debug)]
 pub struct Sprites {
     animations: Option<Vec<Image>>,
+}
+#[derive(Deserialize, Debug)]
+pub struct ScriptLoader {
+    path: String,
 }
 #[derive(Deserialize, Debug)]
 pub struct Children {
@@ -84,6 +90,14 @@ pub fn load_object(
             let i = objects.len();
             objects[index].children.push(i);
             objects = load_object(&c.path, objects, Some(index), frame)?;
+        }
+    }
+
+    if let Some(s) = builder.script {
+        let lib = libloading::Library::new(s.path)?;
+        unsafe {
+            let f: libloading::Symbol<unsafe extern "C" fn()> = lib.get(b"on_click")?;
+            f();
         }
     }
 

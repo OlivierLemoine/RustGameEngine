@@ -11,3 +11,5 @@ depth = 1000
 color = [0.9, 0.1, 0.1, 1]
 
 [script]
+path = "./editor/button/button.dll"
+# on_click

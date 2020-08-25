@@ -11,4 +11,4 @@ depth = 1000
 color = [0.1, 0.1, 0.1, 1]
 
 [children]
-objects = [{ path = "./editor/button.toml" }]
+objects = [{ path = "./editor/button/button.toml" }]

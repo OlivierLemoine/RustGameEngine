@@ -5,7 +5,9 @@ mod systems;
 
 pub mod prelude {
     use super::*;
-    pub use components::{rigidbody::Rigidbody, sprite::Sprite, transform::Transform};
+    pub use components::{
+        rigidbody::Rigidbody, script::Script, sprite::Sprite, transform::Transform,
+    };
     pub use loader::{Image, Object};
     pub use math::Vector;
 }

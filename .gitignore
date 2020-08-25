@@ -1,1 +1,4 @@
 target
+*.pdb
+*.dll.exp
+*.dll.lib
