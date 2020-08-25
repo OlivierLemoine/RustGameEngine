@@ -119,7 +119,20 @@ impl DivAssign<f32> for Vector {
 impl Div<f32> for Vector {
     type Output = Vector;
     fn div(mut self, other: f32) -> Self::Output {
-        self *= other;
+        self /= other;
+        self
+    }
+}
+impl DivAssign<Vector> for Vector {
+    fn div_assign(&mut self, other: Vector) {
+        self.x /= other.x;
+        self.y /= other.y;
+    }
+}
+impl Div for Vector {
+    type Output = Vector;
+    fn div(mut self, other: Vector) -> Self::Output {
+        self /= other;
         self
     }
 }
