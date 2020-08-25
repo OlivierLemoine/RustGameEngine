@@ -52,8 +52,8 @@ pub struct Frame<'a> {
     images: Vec<glium::texture::Texture2d>,
     next_index: usize,
     current_frame_dim: (u32, u32),
-    view_offset: [f32; 2],
-    view_scale: [f32; 2],
+    pub view_offset: [f32; 2],
+    pub view_scale: [f32; 2],
 }
 
 impl<'a> Frame<'a> {

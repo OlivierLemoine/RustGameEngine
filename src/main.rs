@@ -113,8 +113,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         window_size.height as f32,
                                     ),
                             ));
-
-                            println!("{:?}", engine.event_pool);
                         }
                         _ => {}
                     }

@@ -44,6 +44,14 @@ impl<'a> Engine<'a> {
         Ok(())
     }
     pub fn step(&mut self, dt: &std::time::Duration) -> Result<(), Box<dyn std::error::Error>> {
+        for event in self.event_pool.drain(0..) {
+            match event {
+                Event::LeftClickOn(position) => {
+                    // self.display.
+                    println!("{:?}", position);
+                }
+            }
+        }
         for index in 0..self.objects.len() {
             if self.objects[index].transform.is_some() {
                 if self.objects[index].rigidbody.is_some() {
