@@ -10,10 +10,17 @@ pub mod prelude {
     pub use math::Vector;
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum Event {
+    LeftClickOn(math::Vector),
+    // LeftClickOff(math::Vector),
+}
+
 pub struct Engine<'a> {
-    display: crate::frame::Frame<'a>,
+    pub display: crate::frame::Frame<'a>,
     objects: Vec<loader::Object>,
     scene_path: String,
+    pub event_pool: Vec<Event>,
 }
 
 impl<'a> Engine<'a> {
@@ -27,6 +34,7 @@ impl<'a> Engine<'a> {
             display: frame,
             objects,
             scene_path,
+            event_pool: vec![],
         })
     }
     pub fn reload(&mut self) -> Result<(), Box<dyn std::error::Error>> {

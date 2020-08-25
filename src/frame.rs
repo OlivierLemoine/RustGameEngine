@@ -40,7 +40,7 @@ pub struct Program {
 }
 
 pub struct Frame<'a> {
-    display: glium::Display,
+    pub display: glium::Display,
     parameters: glium::DrawParameters<'a>,
     program: Program,
     frame: glium::Frame,
