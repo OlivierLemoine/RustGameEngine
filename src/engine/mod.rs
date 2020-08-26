@@ -41,38 +41,18 @@ impl<'a> Engine<'a> {
         Ok(())
     }
     pub fn step(&mut self, dt: &std::time::Duration) -> Result<(), Box<dyn std::error::Error>> {
-        for event in self.event_pool.drain(0..) {
+        let mut events = vec![];
+        std::mem::swap(&mut self.event_pool, &mut events);
+        for event in events {
             match event {
                 Event::LeftClickOn(position) => {
                     let scale = prelude::Vector::from(self.display.view_scale);
                     let offset = prelude::Vector::from(self.display.view_offset);
                     let position = position * scale - offset;
 
-                    println!("----------------------------");
-
                     for index in (0..self.objects.len()).rev() {
-                        if self.objects[index].try_borrow()?.transform.is_some() {
-                            if systems::physics::raycast_normal(
-                                self.objects[index]
-                                    .try_borrow()?
-                                    .transform
-                                    .as_ref()
-                                    .unwrap(),
-                                &position,
-                            ) {
-                                println!("{} : {:?}", index, self.objects[index]);
-                                if let Some(lib) = self.objects[index]
-                                    .try_borrow()?
-                                    .script
-                                    .as_ref()
-                                    .map(|s| s.lib.as_ref())
-                                    .flatten()
-                                {
-                                    let f = unsafe { lib.get::<prelude::OnClick>(b"on_click") }?;
-                                    f();
-                                    break;
-                                }
-                            }
+                        if self.collide(self.objects[index].clone(), position)? {
+                            break;
                         }
                     }
                 }
@@ -82,6 +62,41 @@ impl<'a> Engine<'a> {
             self.obj_step(self.objects[index].clone(), dt)?;
         }
         self.display.new_frame()
+    }
+    fn collide(
+        &self,
+        obj: Rc<RefCell<Object>>,
+        point: Vector,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
+        if systems::physics::raycast_normal(obj.try_borrow()?.transform.as_ref().unwrap(), &point) {
+            let new_point = {
+                let obj = &*obj.try_borrow()?;
+                let transform = obj.transform.as_ref().unwrap();
+                (point - transform.position) / transform.scale
+            };
+            let mut has_child_collide = false;
+
+            for child in obj.try_borrow()?.children.iter().map(|v| v.clone()) {
+                has_child_collide = self.collide(child, new_point)?;
+            }
+
+            if !has_child_collide {
+                if let Some(lib) = obj
+                    .try_borrow()?
+                    .script
+                    .as_ref()
+                    .map(|s| s.lib.as_ref())
+                    .flatten()
+                {
+                    let f = unsafe { lib.get::<prelude::OnClick>(b"on_click") }?;
+                    f();
+                }
+            }
+
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
     fn obj_step(
         &mut self,
