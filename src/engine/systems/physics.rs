@@ -10,3 +10,7 @@ pub fn gravity(t: &mut Transform, r: &mut Rigidbody, dt: &std::time::Duration) {
     r.speed += r.acceleration * secs;
     t.position += r.speed;
 }
+
+pub fn raycast_normal(t: &mut Transform, ray: Vector) -> bool {
+    (t.position.x - ray.x).abs() <= t.scale.x && (t.position.y - ray.y).abs() <= t.scale.y
+}

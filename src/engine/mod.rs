@@ -42,8 +42,15 @@ impl<'a> Engine<'a> {
         for event in self.event_pool.drain(0..) {
             match event {
                 Event::LeftClickOn(position) => {
-                    // self.display.
+                    let scale = prelude::Vector::from(self.display.view_scale);
+                    let offset = prelude::Vector::from(self.display.view_offset);
+                    print!("{:?} {:?} {:?} ", position, scale, offset);
+                    let position = position * scale - offset;
                     println!("{:?}", position);
+                    for index in 0..self.objects.len() {
+                        if self.objects[index].transform.is_some() {}
+                    }
+                    // self.display.
                 }
             }
         }
@@ -71,7 +78,7 @@ impl<'a> Engine<'a> {
                     let sprite = obj.sprite.as_ref().unwrap();
 
                     if let Some(color) = &sprite.color {
-                        self.display.draw_color(
+                        let _ = self.display.draw_color(
                             position.to_array(),
                             scale.to_array(),
                             color.clone(),

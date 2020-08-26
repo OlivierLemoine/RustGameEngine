@@ -76,7 +76,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             };
         }
-        use glutin::event::Event;
 
         let dt = timer.elapsed();
         timer = time::Instant::now();
@@ -109,9 +108,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             engine.event_pool.push(engine::Event::LeftClickOn(
                                 mouse_position
                                     / engine::prelude::Vector::new(
-                                        window_size.width as f32,
-                                        window_size.height as f32,
-                                    ),
+                                        (window_size.width as f32) / 2.0,
+                                        (window_size.height as f32) / 2.0,
+                                    )
+                                    - engine::prelude::Vector::one(),
                             ));
                         }
                         _ => {}

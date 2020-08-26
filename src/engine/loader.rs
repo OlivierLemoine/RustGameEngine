@@ -95,10 +95,7 @@ pub fn load_object(
 
     if let Some(s) = builder.script {
         let lib = libloading::Library::new(s.path)?;
-        unsafe {
-            let on_click: Option<libloading::Symbol<OnClick>> = lib.get(b"on_click").ok();
-            objects[index].script = Some(Script { lib, on_click });
-        }
+        objects[index].script = Some(Script { lib: Some(lib) })
     }
 
     // builder.sprite.map(|s| {

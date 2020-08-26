@@ -102,7 +102,7 @@ impl<'a> Frame<'a> {
         {
             self.images_to_load.lock().unwrap().append(&mut paths);
         }
-        if { *self.done_loading.lock().unwrap() } {
+        if *self.done_loading.lock().unwrap() {
             {
                 *self.done_loading.lock().unwrap() = false;
             }
@@ -184,7 +184,7 @@ impl<'a> Frame<'a> {
 
         self.current_frame_dim = self.display.get_framebuffer_dimensions();
 
-        while let Some(img) = { self.images_to_add.lock().unwrap().pop() } {
+        while let Some(img) = self.images_to_add.lock().unwrap().pop() {
             let dims = img.dimensions();
             let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&img.into_raw(), dims);
             self.images
@@ -198,6 +198,6 @@ impl<'a> Frame<'a> {
 }
 impl<'a> Drop for Frame<'a> {
     fn drop(&mut self) {
-        self.frame.set_finish();
+        let _ = self.frame.set_finish();
     }
 }
