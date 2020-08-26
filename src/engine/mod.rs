@@ -3,14 +3,7 @@ mod loader;
 mod math;
 mod systems;
 
-pub mod prelude {
-    use super::*;
-    pub use components::{
-        rigidbody::Rigidbody, script::Script, sprite::Sprite, transform::Transform,
-    };
-    pub use loader::{Image, Object};
-    pub use math::Vector;
-}
+pub mod prelude;
 
 #[derive(Debug, Copy, Clone)]
 pub enum Event {
