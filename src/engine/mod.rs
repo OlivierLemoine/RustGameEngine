@@ -5,15 +5,17 @@ mod systems;
 
 pub mod prelude;
 
+use prelude::*;
+
 #[derive(Debug, Copy, Clone)]
 pub enum Event {
-    LeftClickOn(math::Vector),
+    LeftClickOn(Vector),
     // LeftClickOff(math::Vector),
 }
 
 pub struct Engine<'a> {
     pub display: crate::frame::Frame<'a>,
-    objects: Vec<loader::Object>,
+    objects: Vec<Rc<RefCell<Object>>>,
     scene_path: String,
     pub event_pool: Vec<Event>,
 }
@@ -49,13 +51,18 @@ impl<'a> Engine<'a> {
                     println!("----------------------------");
 
                     for index in (0..self.objects.len()).rev() {
-                        if self.objects[index].transform.is_some() {
+                        if self.objects[index].try_borrow()?.transform.is_some() {
                             if systems::physics::raycast_normal(
-                                self.objects[index].transform.as_ref().unwrap(),
+                                self.objects[index]
+                                    .try_borrow()?
+                                    .transform
+                                    .as_ref()
+                                    .unwrap(),
                                 &position,
                             ) {
                                 println!("{} : {:?}", index, self.objects[index]);
                                 if let Some(lib) = self.objects[index]
+                                    .try_borrow()?
                                     .script
                                     .as_ref()
                                     .map(|s| s.lib.as_ref())
@@ -64,59 +71,68 @@ impl<'a> Engine<'a> {
                                     let f = unsafe { lib.get::<prelude::OnClick>(b"on_click") }?;
                                     f();
                                     break;
-                                    // TODO nested obj as it is just so much easier for everything. Here, the transform is not correct.
                                 }
                             }
                         }
                     }
-                    // self.display.
                 }
             }
         }
         for index in 0..self.objects.len() {
-            if self.objects[index].transform.is_some() {
-                if self.objects[index].rigidbody.is_some() {
-                    let obj = &mut self.objects[index];
-                    systems::physics::gravity(
-                        obj.transform.as_mut().unwrap(),
-                        obj.rigidbody.as_mut().unwrap(),
-                        dt,
+            self.obj_step(self.objects[index].clone(), dt)?;
+        }
+        self.display.new_frame()
+    }
+    fn obj_step(
+        &mut self,
+        obj: Rc<RefCell<Object>>,
+        dt: &std::time::Duration,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let has_transform = obj.try_borrow()?.transform.is_some();
+        let has_rigidbody = obj.try_borrow()?.rigidbody.is_some();
+        let has_sprite = obj.try_borrow()?.sprite.is_some();
+
+        if has_transform {
+            if has_rigidbody {
+                let obj = &mut *obj.try_borrow_mut()?;
+                systems::physics::gravity(
+                    obj.transform.as_mut().unwrap(),
+                    obj.rigidbody.as_mut().unwrap(),
+                    dt,
+                );
+            }
+            if has_sprite {
+                let obj = obj.try_borrow()?;
+                let transform = obj.global_transform().unwrap();
+                let sprite = obj.sprite.as_ref().unwrap();
+
+                if let Some(color) = &sprite.color {
+                    let _ = self.display.draw_color(
+                        transform.position.to_array(),
+                        transform.scale.to_array(),
+                        color.clone(),
                     );
-                }
-                if self.objects[index].sprite.is_some() {
-                    let obj = &self.objects[index];
-                    let scale = obj.transform.as_ref().unwrap().scale;
-                    let mut position = obj.transform.as_ref().unwrap().position;
-
-                    let mut parent_index = obj.parent;
-                    while let Some(parent) = (|| Some(&self.objects[parent_index?]))() {
-                        parent.transform.as_ref().map(|t| position += t.position);
-                        parent_index = parent.parent;
-                    }
-
-                    let sprite = obj.sprite.as_ref().unwrap();
-
-                    if let Some(color) = &sprite.color {
-                        let _ = self.display.draw_color(
-                            position.to_array(),
-                            scale.to_array(),
-                            color.clone(),
-                        );
-                    } else {
-                        self.display.draw_image(crate::frame::Image {
-                            position: position.to_array(),
-                            scale: scale.to_array(),
-                            texture: *sprite
-                                .animations
-                                .get(sprite.animations.keys().next().unwrap())
-                                .unwrap()
-                                .first()
-                                .unwrap(),
-                        })?;
-                    }
+                } else {
+                    self.display.draw_image(crate::frame::Image {
+                        position: transform.position.to_array(),
+                        scale: transform.scale.to_array(),
+                        texture: *sprite
+                            .animations
+                            .get(sprite.animations.keys().next().unwrap())
+                            .unwrap()
+                            .first()
+                            .unwrap(),
+                    })?;
                 }
             }
         }
-        self.display.new_frame()
+
+        let children = obj.try_borrow()?.children.clone();
+
+        for c in children {
+            self.obj_step(c.clone(), dt)?;
+        }
+
+        Ok(())
     }
 }

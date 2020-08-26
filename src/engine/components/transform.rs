@@ -1,7 +1,7 @@
 use super::super::prelude::*;
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Transform {
     #[serde(default)]
     pub position: Vector,

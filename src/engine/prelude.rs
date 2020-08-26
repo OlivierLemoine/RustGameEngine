@@ -7,3 +7,5 @@ pub use components::{
 };
 pub use loader::{Image, Object};
 pub use math::Vector;
+pub use std::cell::RefCell;
+pub use std::rc::{Rc, Weak};
