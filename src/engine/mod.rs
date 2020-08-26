@@ -44,11 +44,30 @@ impl<'a> Engine<'a> {
                 Event::LeftClickOn(position) => {
                     let scale = prelude::Vector::from(self.display.view_scale);
                     let offset = prelude::Vector::from(self.display.view_offset);
-                    print!("{:?} {:?} {:?} ", position, scale, offset);
                     let position = position * scale - offset;
-                    println!("{:?}", position);
-                    for index in 0..self.objects.len() {
-                        if self.objects[index].transform.is_some() {}
+
+                    println!("----------------------------");
+
+                    for index in (0..self.objects.len()).rev() {
+                        if self.objects[index].transform.is_some() {
+                            if systems::physics::raycast_normal(
+                                self.objects[index].transform.as_ref().unwrap(),
+                                &position,
+                            ) {
+                                println!("{} : {:?}", index, self.objects[index]);
+                                if let Some(lib) = self.objects[index]
+                                    .script
+                                    .as_ref()
+                                    .map(|s| s.lib.as_ref())
+                                    .flatten()
+                                {
+                                    let f = unsafe { lib.get::<prelude::OnClick>(b"on_click") }?;
+                                    f();
+                                    break;
+                                    // TODO nested obj as it is just so much easier for everything. Here, the transform is not correct.
+                                }
+                            }
+                        }
                     }
                     // self.display.
                 }
