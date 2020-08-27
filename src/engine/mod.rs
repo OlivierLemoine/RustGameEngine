@@ -26,7 +26,6 @@ impl<'a> Engine<'a> {
         scene_path: String,
     ) -> Result<Engine<'a>, Box<dyn std::error::Error>> {
         let objects = loader::load_scene(&scene_path, &mut frame)?;
-        println!("{:?}", objects);
         Ok(Engine {
             display: frame,
             objects,
@@ -36,7 +35,6 @@ impl<'a> Engine<'a> {
     }
     pub fn reload(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let objects = loader::load_scene(&self.scene_path, &mut self.display)?;
-        println!("{:?}", objects);
         self.objects = objects;
         Ok(())
     }
