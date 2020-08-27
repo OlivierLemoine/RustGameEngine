@@ -85,40 +85,42 @@ pub fn load_object(
             let lib = libloading::Library::new(s.path)?;
             self_obj.script = Some(Script { lib: Some(lib) })
         }
+
+        builder.sprite.map(|s| {
+            s.animations.map(|a| {
+                let mut image_name_to_index =
+                    std::collections::HashMap::<String, Vec<usize>>::new();
+                for Image { name, path } in a {
+                    let reg = regex::Regex::new("\\{(\\d+)-(\\d+)\\}").ok()?;
+                    let caps = reg.captures(&path);
+                    let indices = match caps {
+                        Some(caps) => {
+                            //
+                            let start = caps.get(1)?.as_str().parse::<u32>().ok()?;
+                            let end = caps.get(2)?.as_str().parse::<u32>().ok()?;
+                            // println!("{} - {}", start, end);
+
+                            let paths = (start..=end)
+                                .map(|v| {
+                                    path.clone()
+                                        .replace(&format!("{{{}-{}}}", start, end), &v.to_string())
+                                })
+                                .collect();
+
+                            frame.load_image(paths)
+                        }
+                        None => frame.load_image(vec![path]),
+                    };
+                    image_name_to_index.insert(name, indices);
+                }
+                self_obj
+                    .sprite
+                    .as_mut()
+                    .map(|mut s| s.animations = image_name_to_index);
+                Some(())
+            })
+        });
     }
-
-    // builder.sprite.map(|s| {
-    //     s.animations.map(|a| {
-    //         let mut image_name_to_index = std::collections::HashMap::<String, Vec<usize>>::new();
-    //         for Image { name, path } in a {
-    //             let reg = regex::Regex::new("\\{(\\d+)-(\\d+)\\}").ok()?;
-    //             let caps = reg.captures(&path);
-    //             let indices = match caps {
-    //                 Some(caps) => {
-    //                     //
-    //                     let start = caps.get(1)?.as_str().parse::<u32>().ok()?;
-    //                     let end = caps.get(2)?.as_str().parse::<u32>().ok()?;
-    //                     // println!("{} - {}", start, end);
-
-    //                     let paths = (start..=end)
-    //                         .map(|v| {
-    //                             path.clone()
-    //                                 .replace(&format!("{{{}-{}}}", start, end), &v.to_string())
-    //                         })
-    //                         .collect();
-
-    //                     frame.load_image(paths)
-    //                 }
-    //                 None => frame.load_image(vec![path]),
-    //             };
-    //             image_name_to_index.insert(name, indices);
-    //         }
-    //         objects[index]
-    //             .sprite
-    //             .map(|mut s| s.animations = image_name_to_index);
-    //         Some(())
-    //     })
-    // });
 
     Ok(object)
 }
