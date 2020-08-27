@@ -2,3 +2,4 @@ target
 *.pdb
 *.dll.exp
 *.dll.lib
+prelude.rs
