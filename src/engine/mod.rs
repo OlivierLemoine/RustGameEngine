@@ -19,6 +19,7 @@ pub struct Engine<'a> {
     objects: Vec<Rc<RefCell<Object>>>,
     scene_path: String,
     pub event_pool: Vec<Event>,
+    libs: std::collections::HashMap<String, libloading::Library>,
 }
 
 impl<'a> Engine<'a> {
@@ -26,17 +27,21 @@ impl<'a> Engine<'a> {
         mut frame: crate::frame::Frame<'a>,
         scene_path: String,
     ) -> Result<Engine<'a>, Box<dyn std::error::Error>> {
-        let objects = loader::load_scene(&scene_path, &mut frame)?;
+        let mut libs = std::collections::HashMap::new();
+        let objects = loader::load_scene(&scene_path, &mut frame, &mut libs)?;
         Ok(Engine {
             display: frame,
             objects,
             scene_path,
             event_pool: vec![],
+            libs,
         })
     }
     pub fn reload(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let objects = loader::load_scene(&self.scene_path, &mut self.display)?;
+        let mut libs = std::collections::HashMap::new();
+        let objects = loader::load_scene(&self.scene_path, &mut self.display, &mut libs)?;
         self.objects = objects;
+        self.libs = libs;
         Ok(())
     }
     pub fn step(&mut self, dt: &std::time::Duration) -> Result<(), Box<dyn std::error::Error>> {
@@ -80,13 +85,11 @@ impl<'a> Engine<'a> {
             }
 
             if !has_child_collide {
-                if let Some(lib) = obj
-                    .try_borrow()?
-                    .script
-                    .as_ref()
-                    .map(|s| s.lib.as_ref())
-                    .flatten()
-                {
+                if let Some(lib) = obj.try_borrow()?.script.as_ref() {
+                    let lib = self
+                        .libs
+                        .get(&lib.lib)
+                        .ok_or(format!("Unknown lib {}", lib.lib))?;
                     let f = unsafe { lib.get::<prelude::OnClick>(b"on_click") }?;
                     f();
                 }

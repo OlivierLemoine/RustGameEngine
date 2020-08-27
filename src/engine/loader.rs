@@ -39,6 +39,7 @@ pub struct Image {
 pub fn load_scene(
     path: &str,
     frame: &mut crate::frame::Frame,
+    libs: &mut std::collections::HashMap<String, libloading::Library>,
 ) -> Result<Vec<Rc<RefCell<Object>>>, Box<dyn std::error::Error>> {
     let f = std::fs::read_to_string(path)?;
     let scene: Scene = toml::from_str(&f)?;
@@ -46,7 +47,7 @@ pub fn load_scene(
     let mut objects = vec![];
 
     for o in scene.objects {
-        objects.push(load_object(&o.path, None, frame)?);
+        objects.push(load_object(&o.path, None, frame, libs)?);
     }
 
     Ok(objects)
@@ -56,6 +57,7 @@ pub fn load_object(
     path: &str,
     parent: Option<Weak<RefCell<Object>>>,
     frame: &mut crate::frame::Frame,
+    libs: &mut std::collections::HashMap<String, libloading::Library>,
 ) -> Result<Rc<RefCell<Object>>, Box<dyn std::error::Error>> {
     let file = std::fs::read_to_string(path)?;
 
@@ -77,13 +79,14 @@ pub fn load_object(
             for c in cs {
                 self_obj
                     .children
-                    .push(load_object(&c.path, Some(self_ref.clone()), frame)?)
+                    .push(load_object(&c.path, Some(self_ref.clone()), frame, libs)?)
             }
         }
 
         if let Some(s) = builder.script {
-            let lib = libloading::Library::new(s.path)?;
-            self_obj.script = Some(Script { lib: Some(lib) })
+            let lib = libloading::Library::new(s.path.clone())?;
+            libs.insert(s.path.clone(), lib);
+            self_obj.script = Some(Script { lib: s.path })
         }
 
         builder.sprite.map(|s| {

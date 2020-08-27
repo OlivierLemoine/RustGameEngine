@@ -5,6 +5,6 @@ pub type OnClick = fn();
 
 #[derive(Deserialize, Default, Debug)]
 pub struct Script {
-    #[serde(skip)]
-    pub lib: Option<libloading::Library>,
+    #[serde(default)]
+    pub lib: String,
 }
