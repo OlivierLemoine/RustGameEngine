@@ -1,6 +1,7 @@
 mod components;
 mod loader;
 mod math;
+mod object;
 mod systems;
 
 pub mod prelude;
