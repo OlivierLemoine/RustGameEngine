@@ -1,1 +1,1 @@
-objects = [{ path = "./editor/pane.toml", position = [0, 0, 0] }]
+objects = [{ path = "pane.toml", position = [0, 0, 0] }]

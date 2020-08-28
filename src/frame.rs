@@ -46,7 +46,7 @@ pub struct Frame<'a> {
     frame: glium::Frame,
     vertex_buffer: glium::VertexBuffer<Vertex>,
     indices_buffer: glium::index::IndexBuffer<u16>,
-    images_to_load: Arc<Mutex<Vec<String>>>,
+    images_to_load: Arc<Mutex<Vec<std::path::PathBuf>>>,
     images_to_add: Arc<Mutex<Vec<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>>>>,
     done_loading: Arc<Mutex<bool>>,
     images: Vec<glium::texture::Texture2d>,
@@ -97,7 +97,7 @@ impl<'a> Frame<'a> {
             ],
         })
     }
-    pub fn load_image(&mut self, mut paths: Vec<String>) -> Vec<usize> {
+    pub fn load_image(&mut self, mut paths: Vec<std::path::PathBuf>) -> Vec<usize> {
         let nb_new_images = paths.len();
         {
             self.images_to_load.lock().unwrap().append(&mut paths);
@@ -114,7 +114,7 @@ impl<'a> Frame<'a> {
                     let path = { images_to_load_ref.lock().unwrap().drain(0..1) }
                         .next()
                         .unwrap();
-                    println!("Loading image {}", path);
+                    println!("Loading image {:?}", path);
                     let img = image::load(
                         std::io::Cursor::new(std::fs::read(path).unwrap()),
                         image::ImageFormat::Png,

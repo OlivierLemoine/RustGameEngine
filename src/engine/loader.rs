@@ -41,25 +41,32 @@ pub fn load_scene(
     frame: &mut crate::frame::Frame,
     libs: &mut std::collections::HashMap<String, libloading::Library>,
 ) -> Result<Vec<Rc<RefCell<Object>>>, Box<dyn std::error::Error>> {
-    let f = std::fs::read_to_string(path)?;
+    let mut path = std::path::Path::new(path).to_owned();
+
+    let f = std::fs::read_to_string(&path)?;
     let scene: Scene = toml::from_str(&f)?;
 
     let mut objects = vec![];
 
+    path.pop();
+
     for o in scene.objects {
-        objects.push(load_object(&o.path, None, frame, libs)?);
+        let mut obj_path = path.clone();
+        obj_path.push(o.path);
+        objects.push(load_object(obj_path, None, frame, libs)?);
     }
 
     Ok(objects)
 }
 
 pub fn load_object(
-    path: &str,
+    mut obj_path: std::path::PathBuf,
     parent: Option<Weak<RefCell<Object>>>,
     frame: &mut crate::frame::Frame,
     libs: &mut std::collections::HashMap<String, libloading::Library>,
 ) -> Result<Rc<RefCell<Object>>, Box<dyn std::error::Error>> {
-    let file = std::fs::read_to_string(path)?;
+    let file = std::fs::read_to_string(&obj_path)?;
+    obj_path.pop();
 
     let mut object: Object = toml::from_str(&file)?;
     object.parent = parent;
@@ -77,16 +84,32 @@ pub fn load_object(
             .flatten()
         {
             for c in cs {
-                self_obj
-                    .children
-                    .push(load_object(&c.path, Some(self_ref.clone()), frame, libs)?)
+                let mut child_path = obj_path.clone();
+                child_path.push(c.path);
+                self_obj.children.push(load_object(
+                    child_path,
+                    Some(self_ref.clone()),
+                    frame,
+                    libs,
+                )?)
             }
         }
 
         if let Some(s) = builder.script {
-            let lib = libloading::Library::new(s.path.clone())?;
-            libs.insert(s.path.clone(), lib);
-            self_obj.script = Some(Script { lib: s.path })
+            let mut lib_path = obj_path.clone();
+            lib_path.push(s.path);
+
+            let lib_path_string = lib_path
+                .clone()
+                .into_os_string()
+                .into_string()
+                .map_err(|_| "Could not load lib")?;
+
+            let lib = libloading::Library::new(lib_path)?;
+            libs.insert(lib_path_string.clone(), lib);
+            self_obj.script = Some(Script {
+                lib: lib_path_string,
+            })
         }
 
         builder.sprite.map(|s| {
@@ -105,14 +128,22 @@ pub fn load_object(
 
                             let paths = (start..=end)
                                 .map(|v| {
-                                    path.clone()
-                                        .replace(&format!("{{{}-{}}}", start, end), &v.to_string())
+                                    let mut image_path = obj_path.clone();
+                                    image_path.push(path.clone().replace(
+                                        &format!("{{{}-{}}}", start, end),
+                                        &v.to_string(),
+                                    ));
+                                    image_path
                                 })
                                 .collect();
 
                             frame.load_image(paths)
                         }
-                        None => frame.load_image(vec![path]),
+                        None => {
+                            let mut image_path = obj_path.clone();
+                            image_path.push(path);
+                            frame.load_image(vec![image_path])
+                        }
                     };
                     image_name_to_index.insert(name, indices);
                 }
