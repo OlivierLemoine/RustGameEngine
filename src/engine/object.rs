@@ -11,6 +11,8 @@ pub struct Object {
     pub parent: Option<Weak<RefCell<Object>>>,
     #[serde(skip)]
     pub children: Vec<Rc<RefCell<Object>>>,
+    #[serde(default)]
+    pub custom: std::collections::HashMap<String, String>,
 }
 impl Object {
     pub fn global_transform(&self) -> Option<Transform> {
