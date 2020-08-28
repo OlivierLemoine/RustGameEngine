@@ -115,9 +115,12 @@ impl<'a> Frame<'a> {
                         .next()
                         .unwrap();
                     println!("Loading image {:?}", path);
+
+                    let extention = image::ImageFormat::from_path(&path).unwrap();
+
                     let img = image::load(
                         std::io::Cursor::new(std::fs::read(path).unwrap()),
-                        image::ImageFormat::Png,
+                        extention,
                     )
                     .unwrap()
                     .to_rgba();
@@ -158,7 +161,6 @@ impl<'a> Frame<'a> {
         Ok(())
     }
     pub fn draw_image(&mut self, image: Image) -> Result<(), Box<dyn std::error::Error>> {
-        println!("{:?}", self.display.get_framebuffer_dimensions());
         let img = self
             .images
             .get(image.texture)
