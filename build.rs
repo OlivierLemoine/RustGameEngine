@@ -9,11 +9,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|path| std::fs::read_to_string(path))
         .collect::<Result<Vec<_>, _>>()?
         .concat()
+        .replace("\r\n", "\n")
         .replace(", Deserialize,", "")
         .replace(", Deserialize", "")
         .replace("Deserialize,", "")
         .replace("#[derive(Deserialize)]", "")
-        .split("\r\n")
+        .split("\n")
         .map(|v| v.trim())
         .filter(|v| !v.starts_with("//"))
         .filter(|v| !v.starts_with("#[serde"))
