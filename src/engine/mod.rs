@@ -72,29 +72,27 @@ impl<'a> Engine<'a> {
         obj: Rc<RefCell<Object>>,
         point: Vector,
     ) -> Result<bool, Box<dyn std::error::Error>> {
+        for child in obj.try_borrow()?.children.iter().map(|v| v.clone()) {
+            if self.collide(child, point)? {
+                return Ok(true);
+            }
+        }
+
         if systems::physics::raycast_normal(&obj.try_borrow()?.global_transform().unwrap(), &point)
         {
-            let mut has_child_collide = false;
+            let f = if let Some(lib) = obj.try_borrow()?.script.as_ref() {
+                let lib = self
+                    .libs
+                    .get(&lib.lib)
+                    .ok_or(format!("Unknown lib {}", lib.lib))?;
+                let f = unsafe { lib.get::<prelude::OnClick>(b"on_click") }?;
+                Some(f)
+            } else {
+                None
+            };
 
-            for child in obj.try_borrow()?.children.iter().map(|v| v.clone()) {
-                has_child_collide = self.collide(child, point)?;
-            }
-
-            if !has_child_collide {
-                let f = if let Some(lib) = obj.try_borrow()?.script.as_ref() {
-                    let lib = self
-                        .libs
-                        .get(&lib.lib)
-                        .ok_or(format!("Unknown lib {}", lib.lib))?;
-                    let f = unsafe { lib.get::<prelude::OnClick>(b"on_click") }?;
-                    Some(f)
-                } else {
-                    None
-                };
-
-                if let Some(f) = f {
-                    f(&mut *obj.try_borrow_mut()?);
-                }
+            if let Some(f) = f {
+                f(&mut *obj.try_borrow_mut()?);
             }
 
             Ok(true)
