@@ -12,25 +12,25 @@ pub fn gravity(t: &mut Transform, r: &mut Rigidbody, dt: &std::time::Duration) {
 }
 
 pub fn raycast_normal(t: &Transform, ray: &Vector) -> bool {
-    println!("New obj:");
-    println!(
-        "|{} - {}| = {} <= {}",
-        t.position.x,
-        ray.x,
-        (t.position.x - ray.x).abs(),
-        t.scale.x
-    );
-    println!(
-        "|{} - {}| = {} <= {}",
-        t.position.y,
-        ray.y,
-        (t.position.y - ray.y).abs(),
-        t.scale.y
-    );
-    println!(
-        "{} && {}",
-        (t.position.x - ray.x).abs() <= t.scale.x,
-        (t.position.y - ray.y).abs() <= t.scale.y
-    );
+    // println!("New obj:");
+    // println!(
+    //     "|{} - {}| = {} <= {}",
+    //     t.position.x,
+    //     ray.x,
+    //     (t.position.x - ray.x).abs(),
+    //     t.scale.x
+    // );
+    // println!(
+    //     "|{} - {}| = {} <= {}",
+    //     t.position.y,
+    //     ray.y,
+    //     (t.position.y - ray.y).abs(),
+    //     t.scale.y
+    // );
+    // println!(
+    //     "{} && {}",
+    //     (t.position.x - ray.x).abs() <= t.scale.x,
+    //     (t.position.y - ray.y).abs() <= t.scale.y
+    // );
     (t.position.x - ray.x).abs() <= t.scale.x && (t.position.y - ray.y).abs() <= t.scale.y
 }

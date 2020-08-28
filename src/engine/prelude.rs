@@ -1,7 +1,7 @@
 use super::*;
 pub use components::{
     rigidbody::Rigidbody,
-    script::{OnClick, Script},
+    script::{OnClick, Script, Update},
     sprite::Sprite,
     transform::Transform,
 };

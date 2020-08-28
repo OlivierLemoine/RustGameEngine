@@ -80,18 +80,13 @@ impl<'a> Engine<'a> {
 
         if systems::physics::raycast_normal(&obj.try_borrow()?.global_transform().unwrap(), &point)
         {
-            let f = if let Some(lib) = obj.try_borrow()?.script.as_ref() {
-                let lib = self
-                    .libs
-                    .get(&lib.lib)
-                    .ok_or(format!("Unknown lib {}", lib.lib))?;
-                let f = unsafe { lib.get::<prelude::OnClick>(b"on_click") }?;
-                Some(f)
-            } else {
-                None
-            };
-
-            if let Some(f) = f {
+            if let Some(Some(f)) = {
+                let obj = &*obj.try_borrow()?;
+                obj.script.as_ref().map(|s| {
+                    let lib = self.libs.get(&s.lib)?;
+                    unsafe { lib.get::<prelude::OnClick>(b"on_click") }.ok()
+                })
+            } {
                 f(&mut *obj.try_borrow_mut()?);
             }
 
@@ -108,6 +103,7 @@ impl<'a> Engine<'a> {
         let has_transform = obj.try_borrow()?.transform.is_some();
         let has_rigidbody = obj.try_borrow()?.rigidbody.is_some();
         let has_sprite = obj.try_borrow()?.sprite.is_some();
+        let has_script = obj.try_borrow()?.script.is_some();
 
         if has_transform {
             if has_rigidbody {
@@ -130,7 +126,7 @@ impl<'a> Engine<'a> {
                         color.clone(),
                     );
                 } else {
-                    self.display.draw_image(crate::frame::Image {
+                    let _ = self.display.draw_image(crate::frame::Image {
                         position: transform.position.to_array(),
                         scale: transform.scale.to_array(),
                         texture: *sprite
@@ -139,8 +135,21 @@ impl<'a> Engine<'a> {
                             .unwrap()
                             .first()
                             .unwrap(),
-                    })?;
+                    });
                 }
+            }
+        }
+
+        if has_script {
+            let obj = &mut *obj.try_borrow_mut()?;
+            if let Some(f) = {
+                let lib = self
+                    .libs
+                    .get(&obj.script.as_ref().unwrap().lib)
+                    .ok_or(format!("Unknown lib {}", obj.script.as_ref().unwrap().lib))?;
+                unsafe { lib.get::<prelude::Update>(b"update") }.ok()
+            } {
+                f(obj)
             }
         }
 
