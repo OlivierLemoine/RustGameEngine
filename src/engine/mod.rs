@@ -72,16 +72,12 @@ impl<'a> Engine<'a> {
         obj: Rc<RefCell<Object>>,
         point: Vector,
     ) -> Result<bool, Box<dyn std::error::Error>> {
-        if systems::physics::raycast_normal(obj.try_borrow()?.transform.as_ref().unwrap(), &point) {
-            let new_point = {
-                let obj = &*obj.try_borrow()?;
-                let transform = obj.transform.as_ref().unwrap();
-                (point - transform.position) / transform.scale
-            };
+        if systems::physics::raycast_normal(&obj.try_borrow()?.global_transform().unwrap(), &point)
+        {
             let mut has_child_collide = false;
 
             for child in obj.try_borrow()?.children.iter().map(|v| v.clone()) {
-                has_child_collide = self.collide(child, new_point)?;
+                has_child_collide = self.collide(child, point)?;
             }
 
             if !has_child_collide {
