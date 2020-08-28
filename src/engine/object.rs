@@ -17,7 +17,8 @@ impl Object {
         let mut res = self.transform.clone()?;
 
         if let Some(parent) = &self.parent {
-            let parent_global_transform = parent.upgrade()?.try_borrow().ok()?.transform.clone()?;
+            let parent_global_transform =
+                parent.upgrade()?.try_borrow().ok()?.global_transform()?;
             res.position += parent_global_transform.position;
             res.scale *= parent_global_transform.scale;
         }

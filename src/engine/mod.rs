@@ -85,13 +85,19 @@ impl<'a> Engine<'a> {
             }
 
             if !has_child_collide {
-                if let Some(lib) = obj.try_borrow()?.script.as_ref() {
+                let f = if let Some(lib) = obj.try_borrow()?.script.as_ref() {
                     let lib = self
                         .libs
                         .get(&lib.lib)
                         .ok_or(format!("Unknown lib {}", lib.lib))?;
                     let f = unsafe { lib.get::<prelude::OnClick>(b"on_click") }?;
-                    f();
+                    Some(f)
+                } else {
+                    None
+                };
+
+                if let Some(f) = f {
+                    f(&mut *obj.try_borrow_mut()?);
                 }
             }
 
