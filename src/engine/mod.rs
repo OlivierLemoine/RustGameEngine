@@ -1,8 +1,10 @@
+mod camera;
 mod components;
 mod loader;
 mod math;
 mod object;
 mod systems;
+mod time;
 
 pub mod prelude;
 
@@ -20,6 +22,7 @@ pub struct Engine<'a> {
     scene_path: String,
     pub event_pool: Vec<Event>,
     libs: std::collections::HashMap<String, libloading::Library>,
+    camera: Camera,
 }
 
 impl<'a> Engine<'a> {
@@ -35,6 +38,7 @@ impl<'a> Engine<'a> {
             scene_path,
             event_pool: vec![],
             libs,
+            camera: Camera::default(),
         })
     }
     pub fn reload(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -45,6 +49,8 @@ impl<'a> Engine<'a> {
         Ok(())
     }
     pub fn step(&mut self, dt: &std::time::Duration) -> Result<(), Box<dyn std::error::Error>> {
+        let time = Time { delta: dt.clone() };
+
         let mut events = vec![];
         std::mem::swap(&mut self.event_pool, &mut events);
         for event in events {
@@ -63,7 +69,7 @@ impl<'a> Engine<'a> {
             }
         }
         for index in 0..self.objects.len() {
-            self.obj_step(self.objects[index].clone(), dt)?;
+            self.obj_step(self.objects[index].clone(), &time)?;
         }
         self.display.new_frame()
     }
@@ -98,7 +104,7 @@ impl<'a> Engine<'a> {
     fn obj_step(
         &mut self,
         obj: Rc<RefCell<Object>>,
-        dt: &std::time::Duration,
+        time: &Time,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let has_transform = obj.try_borrow()?.transform.is_some();
         let has_rigidbody = obj.try_borrow()?.rigidbody.is_some();
@@ -111,7 +117,7 @@ impl<'a> Engine<'a> {
                 systems::physics::gravity(
                     obj.transform.as_mut().unwrap(),
                     obj.rigidbody.as_mut().unwrap(),
-                    dt,
+                    &time.delta,
                 );
             }
             if has_sprite {
@@ -126,16 +132,19 @@ impl<'a> Engine<'a> {
                         color.clone(),
                     );
                 } else {
-                    let _ = self.display.draw_image(crate::frame::Image {
-                        position: transform.position.to_array(),
-                        scale: transform.scale.to_array(),
-                        texture: *sprite
-                            .animations
-                            .get(sprite.animations.keys().next().unwrap())
-                            .unwrap()
-                            .first()
-                            .unwrap(),
-                    });
+                    let _ = self.display.draw_image(
+                        &self.camera,
+                        crate::frame::Image {
+                            position: transform.position.to_array(),
+                            scale: transform.scale.to_array(),
+                            texture: *sprite
+                                .animations
+                                .get(sprite.animations.keys().next().unwrap())
+                                .unwrap()
+                                .first()
+                                .unwrap(),
+                        },
+                    );
                 }
             }
         }
@@ -149,14 +158,14 @@ impl<'a> Engine<'a> {
                     .ok_or(format!("Unknown lib {}", obj.script.as_ref().unwrap().lib))?;
                 unsafe { lib.get::<prelude::Update>(b"update") }.ok()
             } {
-                f(obj)
+                f(obj, &mut self.camera, time)
             }
         }
 
         let children = obj.try_borrow()?.children.clone();
 
         for c in children {
-            self.obj_step(c.clone(), dt)?;
+            self.obj_step(c.clone(), time)?;
         }
 
         Ok(())

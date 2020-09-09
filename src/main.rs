@@ -1,3 +1,4 @@
+mod cli;
 mod config;
 mod engine;
 mod frame;
@@ -7,6 +8,10 @@ use glium::glutin;
 use std::time;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args().len() > 1 {
+        return cli::run();
+    }
+
     let config_str = std::fs::read_to_string("./config.toml")?;
     let config: Config = toml::from_str(&config_str)?;
 

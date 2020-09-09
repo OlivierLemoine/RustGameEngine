@@ -3,4 +3,3 @@ target
 *.dll
 *.dll.exp
 *.dll.lib
-prelude.rs

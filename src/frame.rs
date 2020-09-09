@@ -160,7 +160,11 @@ impl<'a> Frame<'a> {
         )?;
         Ok(())
     }
-    pub fn draw_image(&mut self, image: Image) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn draw_image(
+        &mut self,
+        camera: &super::engine::prelude::Camera,
+        image: Image,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let img = self
             .images
             .get(image.texture)
@@ -170,6 +174,7 @@ impl<'a> Frame<'a> {
             &self.indices_buffer,
             &self.program.texture,
             &uniform! {
+                cam_position: camera.position.to_array(),
                 obj_position: image.position,
                 obj_scale: image.scale,
                 tex: img,
