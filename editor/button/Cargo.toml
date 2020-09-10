@@ -1,5 +1,5 @@
 [package]
-name = "entity"
+name = "button"
 version = "0.1.0"
 authors = ["OlivierLEMOINE"]
 edition = "2018"

@@ -24,6 +24,7 @@ pub struct Sprites {
 #[derive(Deserialize, Debug)]
 pub struct ScriptLoader {
     path: String,
+    name: String,
 }
 #[derive(Deserialize, Debug)]
 pub struct Children {
@@ -97,7 +98,21 @@ pub fn load_object(
 
         if let Some(s) = builder.script {
             let mut lib_path = obj_path.clone();
+
             lib_path.push(s.path);
+            lib_path.push("target");
+
+            if cfg!(debug_assertions) {
+                lib_path.push("debug");
+            } else {
+                lib_path.push("release");
+            }
+
+            if cfg!(target_os = "windows") {
+                lib_path.push(format!("{}.dll", s.name));
+            } else {
+                unimplemented!()
+            }
 
             let lib_path_string = lib_path
                 .clone()
