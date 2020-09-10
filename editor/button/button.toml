@@ -9,10 +9,8 @@ y = 0.1
 [sprite]
 depth = 1000
 color = [0.9, 0.1, 0.1, 1]
-
 [script]
-path = "button.dll"
-# on_click
+path = "."
 
 [custom]
 test = "test"
