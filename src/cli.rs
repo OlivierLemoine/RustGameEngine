@@ -1,4 +1,5 @@
 use clap::Clap;
+use inflector::Inflector;
 
 #[derive(Clap, Debug)]
 struct Opts {
@@ -17,6 +18,14 @@ struct NewComponent {
     path: String,
 }
 
+fn replace_in_string(s: String, entity_name: &str) -> String {
+    s.replace("__CHANGE_ME_ENTITY_NAME__", &entity_name)
+        .replace(
+            "__CHANGE_ME_ENTITY_NAME_CLASS_CASE__",
+            &entity_name.to_class_case(),
+        )
+}
+
 fn copy_dir_recurs(
     from: std::path::PathBuf,
     mut to: std::path::PathBuf,
@@ -32,13 +41,20 @@ fn copy_dir_recurs(
             new_to.push(entry.file_name());
             copy_dir_recurs(new_from, new_to, entity_name)?;
         } else {
-            let name = entry.file_name();
+            let name = replace_in_string(
+                entry
+                    .file_name()
+                    .to_str()
+                    .map(|v| String::from(v))
+                    .ok_or("")?,
+                entity_name,
+            );
+
             to.push(name);
 
             std::fs::write(
                 &to,
-                std::fs::read_to_string(entry.path())?
-                    .replace("__CHANGE_ME_ENTITY_NAME__", entity_name),
+                replace_in_string(std::fs::read_to_string(entry.path())?, entity_name),
             )?;
             to.pop();
         }

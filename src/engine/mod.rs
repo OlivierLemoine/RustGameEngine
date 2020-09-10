@@ -90,9 +90,10 @@ impl<'a> Engine<'a> {
                 let obj = &*obj.try_borrow()?;
                 obj.script.as_ref().map(|s| {
                     let lib = self.libs.get(&s.lib)?;
-                    unsafe { lib.get::<prelude::OnClick>(b"on_click") }.ok()
+                    unsafe { lib.get::<fn() -> prelude::OnClick>(b"on_click") }.ok()
                 })
             } {
+                let f = f();
                 f(&mut *obj.try_borrow_mut()?);
             }
 
@@ -156,8 +157,9 @@ impl<'a> Engine<'a> {
                     .libs
                     .get(&obj.script.as_ref().unwrap().lib)
                     .ok_or(format!("Unknown lib {}", obj.script.as_ref().unwrap().lib))?;
-                unsafe { lib.get::<prelude::Update>(b"update") }.ok()
+                unsafe { lib.get::<fn() -> prelude::Update>(b"update") }.ok()
             } {
+                let f = f();
                 f(obj, &mut self.camera, time)
             }
         }
