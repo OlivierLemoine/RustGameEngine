@@ -111,6 +111,8 @@ pub fn load_object(
 
             if cfg!(target_os = "windows") {
                 lib_path.push(format!("{}.dll", s.name));
+            } else if cfg!(target_os = "macos") {
+                lib_path.push(format!("lib{}.dylib", s.name));
             } else {
                 unimplemented!()
             }
