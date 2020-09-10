@@ -6,12 +6,11 @@ struct Opts {
     #[clap(subcommand)]
     subcommand: SubCommand,
 }
-
 #[derive(Clap, Debug)]
 enum SubCommand {
     NewComponent(NewComponent),
+    Build,
 }
-
 #[derive(Clap, Debug)]
 struct NewComponent {
     #[clap(short)]
@@ -76,6 +75,22 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .to_string();
 
             copy_dir_recurs(std::path::PathBuf::from("./resources/entity"), to, &name)?;
+        }
+        SubCommand::Build => {
+            let components_list_raw = std::fs::read_to_string("components.list")?;
+            let components_list = components_list_raw
+                .split('\n')
+                .map(|v| v.trim())
+                .collect::<Vec<_>>();
+
+            for path in components_list {
+                let mut proc = std::process::Command::new("cargo");
+                proc.current_dir(path).arg("build");
+                if !cfg!(debug_assertions) {
+                    proc.arg("--release");
+                }
+                proc.spawn()?;
+            }
         }
     }
     Ok(())

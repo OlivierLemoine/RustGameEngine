@@ -14,7 +14,6 @@ fragment_path = "./shaders/fragment_shader.glsl"
 fragment_color_path = "./shaders/fragment_color_shader.glsl"
 
 [scene]
-# path = "../Game-1/resources/scenes/scene.toml"
 path = "./editor/editor.toml"
 [scene.view_size]
 x_min = -1
