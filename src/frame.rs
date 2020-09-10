@@ -52,8 +52,6 @@ pub struct Frame<'a> {
     images: Vec<glium::texture::Texture2d>,
     next_index: usize,
     current_frame_dim: (u32, u32),
-    pub view_offset: [f32; 2],
-    pub view_scale: [f32; 2],
 }
 
 impl<'a> Frame<'a> {
@@ -61,7 +59,6 @@ impl<'a> Frame<'a> {
         display: glium::Display,
         parameters: glium::DrawParameters<'a>,
         program: Program,
-        view_size: super::config::ViewSize,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let vertex_buffer = glium::VertexBuffer::<Vertex>::new(&display, &SQUARE)?;
         let indices_buffer = glium::index::IndexBuffer::new(
@@ -87,14 +84,6 @@ impl<'a> Frame<'a> {
             images: vec![],
             next_index: 0,
             current_frame_dim,
-            view_offset: [
-                (view_size.x_max + view_size.x_min) / 2.0,
-                (view_size.y_max + view_size.y_min) / 2.0,
-            ],
-            view_scale: [
-                2.0 / (view_size.x_max - view_size.x_min),
-                2.0 / (view_size.y_max - view_size.y_min),
-            ],
         })
     }
     pub fn load_image(&mut self, mut paths: Vec<std::path::PathBuf>) -> Vec<usize> {
@@ -155,8 +144,6 @@ impl<'a> Frame<'a> {
                 obj_scale: scale,
                 c: color,
                 window_ratio: if self.current_frame_dim.1 != 0 {self.current_frame_dim.0 / self.current_frame_dim.1} else {1},
-                view_offset: self.view_offset,
-                view_scale: self.view_scale,
             },
             &self.parameters,
         )?;
@@ -181,8 +168,6 @@ impl<'a> Frame<'a> {
                 obj_scale: image.scale,
                 tex: img,
                 window_ratio: if self.current_frame_dim.1 != 0 {self.current_frame_dim.0 / self.current_frame_dim.1} else {1},
-                view_offset: self.view_offset,
-                view_scale: self.view_scale,
             },
             &self.parameters,
         )?;

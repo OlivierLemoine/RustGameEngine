@@ -50,7 +50,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             texture: program_texture,
             color: program_color,
         },
-        config.scene.view_size,
     )?;
 
     let mut timer = time::Instant::now();

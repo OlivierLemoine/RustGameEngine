@@ -15,4 +15,4 @@ path = "."
 name = "button"
 
 [custom]
-test = "test"
+speed = 0.0001

@@ -56,9 +56,7 @@ impl<'a> Engine<'a> {
         for event in events {
             match event {
                 Event::LeftClickOn(position) => {
-                    let scale = prelude::Vector::from(self.display.view_scale);
-                    let offset = prelude::Vector::from(self.display.view_offset);
-                    let position = (position - self.camera.position) * scale - offset;
+                    let position = position - self.camera.position;
 
                     for index in (0..self.objects.len()).rev() {
                         if self.collide(self.objects[index].clone(), position)? {
