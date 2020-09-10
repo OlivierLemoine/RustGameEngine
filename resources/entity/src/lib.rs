@@ -1,4 +1,6 @@
 mod prelude;
+
+use macros::bind;
 use prelude::*;
 
 #[derive(Deserialize, Debug)]
@@ -12,8 +14,8 @@ unsafe extern "C" fn parse_custom_object(
     Ok(Box::new(custom_obj))
 }
 
-#[no_mangle]
-unsafe extern "C" fn on_click(obj: &mut Object) {}
+#[bind(OnClick)]
+fn on_click(obj: &mut Object) {}
 
-#[no_mangle]
-unsafe extern "C" fn update(obj: &mut Object, camera: &mut Camera, time: &mut Time) {}
+#[bind(Update)]
+fn update(obj: &mut Object, camera: &mut Camera, time: &Time) {}

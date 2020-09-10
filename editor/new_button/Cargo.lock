@@ -4,9 +4,14 @@
 name = "entity"
 version = "0.1.0"
 dependencies = [
+ "macros",
  "serde",
  "toml",
 ]
+
+[[package]]
+name = "macros"
+version = "0.1.0"
 
 [[package]]
 name = "proc-macro2"

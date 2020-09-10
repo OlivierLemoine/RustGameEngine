@@ -11,6 +11,23 @@
             "program": "${workspaceFolder}/target/debug/main.exe",
             "args": [],
             "stopAtEntry": false,
+            "preLaunchTask": "build",
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "CLI",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/main.exe",
+            "args": [
+                "new-component",
+                "-p",
+                "./editor/new_button"
+            ],
+            "stopAtEntry": false,
+            "preLaunchTask": "build",
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false
