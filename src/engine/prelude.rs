@@ -1,5 +1,5 @@
 use super::*;
-pub use camera::Camera;
+pub use camera::{Camera, NULL_CAMERA};
 pub use components::{
     rigidbody::Rigidbody,
     script::{OnClick, ParseCustomObject, Script, Update},

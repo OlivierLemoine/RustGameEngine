@@ -3,6 +3,8 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct Object {
+    #[serde(default)]
+    pub ui: bool,
     pub transform: Option<Transform>,
     pub sprite: Option<Sprite>,
     pub rigidbody: Option<Rigidbody>,

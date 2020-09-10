@@ -55,8 +55,8 @@ impl<'a> Engine<'a> {
         std::mem::swap(&mut self.event_pool, &mut events);
         for event in events {
             match event {
-                Event::LeftClickOn(position) => {
-                    let position = position - self.camera.position;
+                Event::LeftClickOn(mut position) => {
+                    position -= self.camera.position;
 
                     for index in (0..self.objects.len()).rev() {
                         if self.collide(self.objects[index].clone(), position)? {
@@ -82,8 +82,16 @@ impl<'a> Engine<'a> {
             }
         }
 
-        if systems::physics::raycast_normal(&obj.try_borrow()?.global_transform().unwrap(), &point)
-        {
+        let has_collide = {
+            let obj = &obj.try_borrow()?;
+            let mut p = point.clone();
+            if obj.ui {
+                p += self.camera.position;
+            }
+            systems::physics::raycast_normal(&obj.global_transform().unwrap(), &p)
+        };
+
+        if has_collide {
             if let Some(Some(f)) = {
                 let obj = &*obj.try_borrow()?;
                 obj.script.as_ref().map(|s| {
@@ -126,14 +134,14 @@ impl<'a> Engine<'a> {
 
                 if let Some(color) = &sprite.color {
                     let _ = self.display.draw_color(
-                        &self.camera,
+                        if obj.ui { &NULL_CAMERA } else { &self.camera },
                         transform.position.to_array(),
                         transform.scale.to_array(),
                         color.clone(),
                     );
                 } else {
                     let _ = self.display.draw_image(
-                        &self.camera,
+                        if obj.ui { &NULL_CAMERA } else { &self.camera },
                         crate::frame::Image {
                             position: transform.position.to_array(),
                             scale: transform.scale.to_array(),

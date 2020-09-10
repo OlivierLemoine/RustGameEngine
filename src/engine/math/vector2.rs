@@ -9,16 +9,16 @@ pub struct Vector {
     pub y: f32,
 }
 impl Vector {
-    pub fn new(x: f32, y: f32) -> Self {
+    pub const fn new(x: f32, y: f32) -> Self {
         Vector { x, y }
     }
-    pub fn zero() -> Self {
+    pub const fn zero() -> Self {
         Vector::new(0.0, 0.0)
     }
-    pub fn one() -> Self {
+    pub const fn one() -> Self {
         Vector::new(1.0, 1.0)
     }
-    pub fn up() -> Self {
+    pub const fn up() -> Self {
         Vector::new(0.0, 1.0)
     }
     pub fn normalize(mut self) -> Self {
