@@ -30,7 +30,7 @@ unsafe extern \"C\" fn {} () -> {} {{
         new_fn, fn_name, fn_ret, new_fn_name
     );
 
-    println!("{}", res);
+    // println!("{}", res);
 
     res.parse().unwrap()
 }

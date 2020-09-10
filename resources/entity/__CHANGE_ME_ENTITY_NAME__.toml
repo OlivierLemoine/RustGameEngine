@@ -1,0 +1,10 @@
+[transform]
+
+[sprite]
+depth = 1000
+color = [1, 1, 1, 1]
+
+[script]
+path = "."
+
+[custom]
