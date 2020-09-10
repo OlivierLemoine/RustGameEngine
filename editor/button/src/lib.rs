@@ -32,7 +32,9 @@ fn update(obj: &mut Object, camera: &mut Camera, time: &Time) {
         .downcast_ref::<Button>()
         .unwrap();
 
-    println!("{:?}", custom.curve);
+    let x = custom
+        .curve
+        .sample(time.start.elapsed().as_millis() as f32 / 1000.0);
 
-    camera.position += Vector::new(custom.speed, 0.0) * (time.delta.as_millis() as f32);
+    camera.position = Vector::new(x, 0.0);
 }

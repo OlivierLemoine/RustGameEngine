@@ -23,6 +23,7 @@ pub struct Engine<'a> {
     pub event_pool: Vec<Event>,
     libs: std::collections::HashMap<String, libloading::Library>,
     camera: Camera,
+    start: std::time::Instant,
 }
 
 impl<'a> Engine<'a> {
@@ -39,6 +40,7 @@ impl<'a> Engine<'a> {
             event_pool: vec![],
             libs,
             camera: Camera::default(),
+            start: std::time::Instant::now(),
         })
     }
     pub fn reload(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -49,7 +51,10 @@ impl<'a> Engine<'a> {
         Ok(())
     }
     pub fn step(&mut self, dt: &std::time::Duration) -> Result<(), Box<dyn std::error::Error>> {
-        let time = Time { delta: dt.clone() };
+        let time = Time {
+            delta: dt.clone(),
+            start: self.start.clone(),
+        };
 
         let mut events = vec![];
         std::mem::swap(&mut self.event_pool, &mut events);
