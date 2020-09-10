@@ -58,7 +58,7 @@ impl<'a> Engine<'a> {
                 Event::LeftClickOn(position) => {
                     let scale = prelude::Vector::from(self.display.view_scale);
                     let offset = prelude::Vector::from(self.display.view_offset);
-                    let position = position * scale - offset;
+                    let position = (position - self.camera.position) * scale - offset;
 
                     for index in (0..self.objects.len()).rev() {
                         if self.collide(self.objects[index].clone(), position)? {
@@ -128,6 +128,7 @@ impl<'a> Engine<'a> {
 
                 if let Some(color) = &sprite.color {
                     let _ = self.display.draw_color(
+                        &self.camera,
                         transform.position.to_array(),
                         transform.scale.to_array(),
                         color.clone(),

@@ -25,5 +25,5 @@ fn update(obj: &mut Object, camera: &mut Camera, time: &Time) {
         // t.position += Vector::new(-0.001, 0.0);
     }
 
-    camera.position += Vector::new(0.01, 0.0) * (time.delta.as_millis() as f32);
+    camera.position += Vector::new(0.0001, 0.0) * (time.delta.as_millis() as f32);
 }

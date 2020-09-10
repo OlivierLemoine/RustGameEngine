@@ -140,6 +140,7 @@ impl<'a> Frame<'a> {
     }
     pub fn draw_color(
         &mut self,
+        camera: &super::engine::prelude::Camera,
         position: [f32; 2],
         scale: [f32; 2],
         color: [f32; 4],
@@ -149,6 +150,7 @@ impl<'a> Frame<'a> {
             &self.indices_buffer,
             &self.program.color,
             &uniform! {
+                cam_position: camera.position.to_array(),
                 obj_position: position,
                 obj_scale: scale,
                 c: color,
