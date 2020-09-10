@@ -6,6 +6,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect::<Vec<_>>();
 
     let all_concat = ["./src/engine/math/vector2.rs",
+    "./src/engine/math/curve.rs",
     "./src/engine/camera.rs",
     "./src/engine/time.rs",
     "./src/engine/object.rs",
@@ -18,14 +19,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect::<Result<Vec<_>, _>>()?
         .concat()
         .replace("\r\n", "\n")
-        .replace(", Deserialize,", "")
-        .replace(", Deserialize", "")
-        .replace("Deserialize,", "")
-        .replace("#[derive(Deserialize)]", "")
         .split("\n")
         .map(|v| v.trim())
         .filter(|v| !v.starts_with("//"))
-        .filter(|v| !v.starts_with("#[serde"))
         .filter(|v| !v.starts_with("#!["))
         .filter(|v| !v.starts_with("use super"))
         .filter(|v| !v.starts_with("use serde"))

@@ -6,6 +6,7 @@ use prelude::*;
 #[derive(Deserialize, Debug)]
 pub struct Button {
     speed: f32,
+    curve: Curve,
 }
 
 #[bind(ParseCustomObject)]
@@ -27,10 +28,11 @@ fn update(obj: &mut Object, camera: &mut Camera, time: &Time) {
         // t.position += Vector::new(-0.001, 0.0);
     }
 
-    let speed = (&**obj.custom.as_ref().unwrap())
+    let custom = (&**obj.custom.as_ref().unwrap())
         .downcast_ref::<Button>()
-        .unwrap()
-        .speed;
+        .unwrap();
 
-    camera.position += Vector::new(speed, 0.0) * (time.delta.as_millis() as f32);
+    println!("{:?}", custom.curve);
+
+    camera.position += Vector::new(custom.speed, 0.0) * (time.delta.as_millis() as f32);
 }
