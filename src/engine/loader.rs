@@ -16,6 +16,7 @@ pub struct Builder {
     sprite: Option<Sprites>,
     children: Option<Children>,
     script: Option<ScriptLoader>,
+    custom: Option<toml::Value>,
 }
 #[derive(Deserialize, Debug)]
 pub struct Sprites {
@@ -121,6 +122,16 @@ pub fn load_object(
                 .map_err(|_| "Could not load lib")?;
 
             let lib = libloading::Library::new(lib_path)?;
+
+            if let Some(c) = builder.custom {
+                if let Some(f) =
+                    unsafe { lib.get::<fn() -> ParseCustomObject>(b"parse_custom_object") }.ok()
+                {
+                    let f = f();
+                    self_obj.custom = Some(f(&format!("{}", c))?);
+                }
+            }
+
             libs.insert(lib_path_string.clone(), lib);
             self_obj.script = Some(Script {
                 lib: lib_path_string,

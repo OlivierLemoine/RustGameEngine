@@ -2,7 +2,7 @@ use super::*;
 pub use camera::Camera;
 pub use components::{
     rigidbody::Rigidbody,
-    script::{OnClick, Script, Update},
+    script::{OnClick, ParseCustomObject, Script, Update},
     sprite::Sprite,
     transform::Transform,
 };
