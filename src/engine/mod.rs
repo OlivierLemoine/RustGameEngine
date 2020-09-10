@@ -19,7 +19,7 @@ pub enum Event {
 pub struct Engine<'a> {
     pub display: crate::frame::Frame<'a>,
     objects: Vec<Rc<RefCell<Object>>>,
-    scene_path: String,
+    scene_path: std::path::PathBuf,
     pub event_pool: Vec<Event>,
     libs: std::collections::HashMap<String, libloading::Library>,
     camera: Camera,
@@ -29,10 +29,10 @@ pub struct Engine<'a> {
 impl<'a> Engine<'a> {
     pub fn new(
         mut frame: crate::frame::Frame<'a>,
-        scene_path: String,
+        scene_path: std::path::PathBuf,
     ) -> Result<Engine<'a>, Box<dyn std::error::Error>> {
         let mut libs = std::collections::HashMap::new();
-        let objects = loader::load_scene(&scene_path, &mut frame, &mut libs)?;
+        let objects = loader::load_scene(scene_path.clone(), &mut frame, &mut libs)?;
         Ok(Engine {
             display: frame,
             objects,
@@ -45,7 +45,7 @@ impl<'a> Engine<'a> {
     }
     pub fn reload(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let mut libs = std::collections::HashMap::new();
-        let objects = loader::load_scene(&self.scene_path, &mut self.display, &mut libs)?;
+        let objects = loader::load_scene(self.scene_path.clone(), &mut self.display, &mut libs)?;
         self.objects = objects;
         self.libs = libs;
         Ok(())
@@ -85,6 +85,12 @@ impl<'a> Engine<'a> {
             if self.collide(child, point)? {
                 return Ok(true);
             }
+        }
+
+        let has_transform = obj.try_borrow()?.transform.is_some();
+
+        if !has_transform {
+            return Ok(false);
         }
 
         let has_collide = {

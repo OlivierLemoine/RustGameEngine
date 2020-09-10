@@ -39,12 +39,10 @@ pub struct Image {
 }
 
 pub fn load_scene(
-    path: &str,
+    mut path: std::path::PathBuf,
     frame: &mut crate::frame::Frame,
     libs: &mut std::collections::HashMap<String, libloading::Library>,
 ) -> Result<Vec<Rc<RefCell<Object>>>, Box<dyn std::error::Error>> {
-    let mut path = std::path::Path::new(path).to_owned();
-
     let f = std::fs::read_to_string(&path)?;
     let scene: Scene = toml::from_str(&f)?;
 

@@ -4,7 +4,6 @@ use serde::Deserialize;
 pub struct Config {
     pub window: Window,
     pub font: Font,
-    pub shaders: Shaders,
     pub scene: Scene,
 }
 #[derive(Deserialize)]
@@ -18,12 +17,6 @@ pub struct Window {
 pub struct Font {
     pub path: String,
     pub height: u32,
-}
-#[derive(Deserialize)]
-pub struct Shaders {
-    pub vertex_path: String,
-    pub fragment_path: String,
-    pub fragment_color_path: String,
 }
 #[derive(Deserialize)]
 pub struct Scene {

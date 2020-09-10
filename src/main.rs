@@ -8,11 +8,23 @@ use glium::glutin;
 use std::time;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    if std::env::args().len() > 1 {
-        return cli::run();
-    }
+    let run_path = if std::env::args().len() > 1 {
+        match cli::run()? {
+            cli::CLIRes::Stop => {
+                return Ok(());
+            }
+            cli::CLIRes::Run(path) => path,
+        }
+    } else {
+        std::path::PathBuf::from(".")
+    };
 
-    let config_str = std::fs::read_to_string("./config.toml")?;
+    let config_path = {
+        let mut tmp = run_path.clone();
+        tmp.push("./config.toml");
+        tmp
+    };
+    let config_str = std::fs::read_to_string(config_path)?;
     let config: Config = toml::from_str(&config_str)?;
 
     let events_loop = glium::glutin::event_loop::EventLoop::new();
@@ -29,13 +41,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let vertex_shader_src = std::fs::read_to_string(config.shaders.vertex_path)?;
+    let vertex_shader_src = std::fs::read_to_string("./shaders/vertex_shader.glsl")?;
 
-    let fragment_shader_src = std::fs::read_to_string(config.shaders.fragment_path)?;
+    let fragment_shader_src = std::fs::read_to_string("./shaders/fragment_shader.glsl")?;
     let program_texture =
         glium::Program::from_source(&display, &vertex_shader_src, &fragment_shader_src, None)?;
 
-    let fragment_color_shader_src = std::fs::read_to_string(config.shaders.fragment_color_path)?;
+    let fragment_color_shader_src =
+        std::fs::read_to_string("./shaders/fragment_color_shader.glsl")?;
     let program_color = glium::Program::from_source(
         &display,
         &vertex_shader_src,
@@ -58,7 +71,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // display.load_image(vec!["./resources/animations/guardian/idle/1.png".into()]);
 
-    let mut engine = engine::Engine::new(display, config.scene.path)?;
+    let scene_path = {
+        let mut tmp = run_path.clone();
+        tmp.push(config.scene.path);
+        tmp
+    };
+
+    let mut engine = engine::Engine::new(display, scene_path)?;
 
     let mut mouse_position = engine::prelude::Vector::zero();
 

@@ -1,6 +1,11 @@
 use clap::Clap;
 use inflector::Inflector;
 
+pub enum CLIRes {
+    Run(std::path::PathBuf),
+    Stop,
+}
+
 #[derive(Clap, Debug)]
 struct Opts {
     #[clap(subcommand)]
@@ -9,12 +14,23 @@ struct Opts {
 #[derive(Clap, Debug)]
 enum SubCommand {
     NewComponent(NewComponent),
-    Build,
+    Build(Build),
+    Run(Run),
 }
 #[derive(Clap, Debug)]
 struct NewComponent {
     #[clap(short)]
     path: String,
+}
+#[derive(Clap, Debug)]
+struct Build {
+    #[clap(short)]
+    path: Option<String>,
+}
+#[derive(Clap, Debug)]
+struct Run {
+    #[clap(short)]
+    path: Option<String>,
 }
 
 fn replace_in_string(s: String, entity_name: &str) -> String {
@@ -61,7 +77,37 @@ fn copy_dir_recurs(
     Ok(())
 }
 
-pub fn run() -> Result<(), Box<dyn std::error::Error>> {
+fn build(path: std::path::PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    let mut component_path = path.clone();
+    component_path.push("components.list");
+    let components_list_raw = std::fs::read_to_string(&component_path)?;
+    let components_list = components_list_raw
+        .split('\n')
+        .map(|v| v.trim())
+        .collect::<Vec<_>>();
+
+    for p in components_list {
+        let mut path = path.clone();
+        path.push(p);
+        path.push("src/prelude.rs");
+
+        std::fs::copy("./resources/entity/src/prelude.rs", &path)?;
+
+        path.pop();
+        path.pop();
+
+        let mut proc = std::process::Command::new("cargo");
+        proc.current_dir(path).arg("build");
+        if !cfg!(debug_assertions) {
+            proc.arg("--release");
+        }
+        proc.spawn()?.wait()?;
+    }
+
+    Ok(())
+}
+
+pub fn run() -> Result<CLIRes, Box<dyn std::error::Error>> {
     let opts: Opts = Opts::parse();
     match opts.subcommand {
         SubCommand::NewComponent(NewComponent { path }) => {
@@ -76,22 +122,16 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
 
             copy_dir_recurs(std::path::PathBuf::from("./resources/entity"), to, &name)?;
         }
-        SubCommand::Build => {
-            let components_list_raw = std::fs::read_to_string("components.list")?;
-            let components_list = components_list_raw
-                .split('\n')
-                .map(|v| v.trim())
-                .collect::<Vec<_>>();
+        SubCommand::Build(Build { path }) => {
+            let path = std::path::PathBuf::from(path.unwrap_or(".".into()));
+            build(path)?;
+        }
+        SubCommand::Run(Run { path }) => {
+            let path = std::path::PathBuf::from(path.unwrap_or(".".into()));
+            build(path.clone())?;
 
-            for path in components_list {
-                let mut proc = std::process::Command::new("cargo");
-                proc.current_dir(path).arg("build");
-                if !cfg!(debug_assertions) {
-                    proc.arg("--release");
-                }
-                proc.spawn()?;
-            }
+            return Ok(CLIRes::Run(path));
         }
     }
-    Ok(())
+    Ok(CLIRes::Stop)
 }

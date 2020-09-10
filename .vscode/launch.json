@@ -20,11 +20,11 @@
             "name": "CLI",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/target/debug/main.exe",
+            "program": "${workspaceFolder}/target/debug/rust_game_engine.exe",
             "args": [
-                "new-component",
-                "-p",
-                "./editor/new_button"
+                "run",
+                // "-p",
+                // "./editor/new_button"
             ],
             "stopAtEntry": false,
             "preLaunchTask": "build",

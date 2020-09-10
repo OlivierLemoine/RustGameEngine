@@ -8,10 +8,5 @@ fps = 30
 path = "./resources/font/arial.ttf"
 height = 300
 
-[shaders]
-vertex_path = "./shaders/vertex_shader.glsl"
-fragment_path = "./shaders/fragment_shader.glsl"
-fragment_color_path = "./shaders/fragment_color_shader.glsl"
-
 [scene]
 path = "./editor/editor.toml"
