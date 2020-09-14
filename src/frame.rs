@@ -181,6 +181,7 @@ impl<'a> Frame<'a> {
             &self.program.color,
             &uniform! {
                 cam_position: camera.position.to_array(),
+                cam_zoom: camera.zoom.to_array(),
                 obj_position: position,
                 obj_scale: scale,
                 c: color,
@@ -205,6 +206,7 @@ impl<'a> Frame<'a> {
             &self.program.texture,
             &uniform! {
                 cam_position: camera.position.to_array(),
+                cam_zoom: camera.zoom.to_array(),
                 obj_position: image.position,
                 obj_scale: image.scale,
                 tex: img,
