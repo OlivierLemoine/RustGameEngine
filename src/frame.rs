@@ -75,7 +75,7 @@ impl<'a> Frame<'a> {
             &display,
             std::fs::File::open(font_path)
                 .map_err(|_| format!("Couldn't find font path : {:?}", font_path))?,
-            32,
+            128,
             glium_text_rusttype::FontTexture::ascii_character_list(),
         )
         .map_err(|_| "Could not load font")?;
@@ -153,10 +153,10 @@ impl<'a> Frame<'a> {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let text = glium_text_rusttype::TextDisplay::new(&self.text, &self.font, text);
         let matrix = [
-            [position[0], 0.0, 0.0, 0.0],
-            [0.0, position[1], 0.0, 0.0],
+            [scale[0], 0.0, 0.0, 0.0],
+            [0.0, scale[1], 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 0.1],
+            [position[0], position[1], 0.0, 1.0],
         ];
         glium_text_rusttype::draw(
             &text,

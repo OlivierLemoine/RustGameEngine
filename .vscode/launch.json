@@ -5,11 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Windows) Launch",
+            "name": "Editor",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/target/debug/main.exe",
-            "args": [],
+            "program": "${workspaceFolder}/target/debug/rust_game_engine.exe",
+            "args": [
+                "run"
+            ],
             "stopAtEntry": false,
             "preLaunchTask": "build",
             "cwd": "${workspaceFolder}",
@@ -17,7 +19,7 @@
             "externalConsole": false
         },
         {
-            "name": "CLI",
+            "name": "Game",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/rust_game_engine.exe",

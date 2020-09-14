@@ -5,7 +5,7 @@ ui = true
 x = 0
 y = 0
 [transform.scale]
-x = 0.1
+x = 1
 y = 1
 
 [sprite]

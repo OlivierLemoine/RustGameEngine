@@ -1,5 +1,5 @@
 ui = true
-[transform]
+
 [transform.position]
 x = -0.8
 y = 0
