@@ -65,7 +65,8 @@ pub fn load_object(
     frame: &mut crate::frame::Frame,
     libs: &mut std::collections::HashMap<String, libloading::Library>,
 ) -> Result<Rc<RefCell<Object>>, Box<dyn std::error::Error>> {
-    let file = std::fs::read_to_string(&obj_path)?;
+    let file = std::fs::read_to_string(&obj_path)
+        .map_err(|_| format!("Can't open object file {:?}", obj_path.canonicalize()))?;
     obj_path.pop();
 
     let mut object: Object = toml::from_str(&file)?;
@@ -121,7 +122,8 @@ pub fn load_object(
                 .into_string()
                 .map_err(|_| "Could not load lib")?;
 
-            let lib = libloading::Library::new(lib_path)?;
+            let lib = libloading::Library::new(&lib_path)
+                .map_err(|_| format!("Can't open lib file {:?}", lib_path.canonicalize()))?;
 
             if let Some(c) = builder.custom {
                 if let Some(f) =

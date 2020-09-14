@@ -63,6 +63,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             texture: program_texture,
             color: program_color,
         },
+        &std::path::PathBuf::from({
+            let mut tmp = run_path.clone();
+            tmp.push(config.font.path);
+            tmp
+        }),
     )?;
 
     let mut timer = time::Instant::now();

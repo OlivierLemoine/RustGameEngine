@@ -41,6 +41,8 @@ pub struct Program {
 
 pub struct Frame<'a> {
     pub display: glium::Display,
+    text: glium_text_rusttype::TextSystem,
+    font: glium_text_rusttype::FontTexture,
     parameters: glium::DrawParameters<'a>,
     program: Program,
     frame: glium::Frame,
@@ -48,7 +50,7 @@ pub struct Frame<'a> {
     indices_buffer: glium::index::IndexBuffer<u16>,
     images_to_load: Arc<Mutex<Vec<std::path::PathBuf>>>,
     images_to_add: Arc<Mutex<Vec<image::ImageBuffer<image::Rgba<u8>, Vec<u8>>>>>,
-    done_loading: Arc<Mutex<bool>>,
+    pub done_loading: Arc<Mutex<bool>>,
     images: Vec<glium::texture::Texture2d>,
     next_index: usize,
     current_frame_dim: (u32, u32),
@@ -59,6 +61,7 @@ impl<'a> Frame<'a> {
         display: glium::Display,
         parameters: glium::DrawParameters<'a>,
         program: Program,
+        font_path: &std::path::PathBuf,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let vertex_buffer = glium::VertexBuffer::<Vertex>::new(&display, &SQUARE)?;
         let indices_buffer = glium::index::IndexBuffer::new(
@@ -66,14 +69,27 @@ impl<'a> Frame<'a> {
             glium::index::PrimitiveType::TrianglesList,
             &INDICES,
         )?;
-        let mut frame = display.draw();
-        frame.clear_color(1.0, 1.0, 1.0, 1.0);
+
+        let text = glium_text_rusttype::TextSystem::new(&display);
+        let font = glium_text_rusttype::FontTexture::new(
+            &display,
+            std::fs::File::open(font_path)
+                .map_err(|_| format!("Couldn't find font path : {:?}", font_path))?,
+            32,
+            glium_text_rusttype::FontTexture::ascii_character_list(),
+        )
+        .map_err(|_| "Could not load font")?;
 
         let current_frame_dim = display.get_framebuffer_dimensions();
+
+        let mut frame = display.draw();
+        frame.clear_color(1.0, 1.0, 1.0, 1.0);
 
         Ok(Frame {
             parameters,
             display,
+            text,
+            font,
             program,
             frame,
             vertex_buffer,
@@ -126,6 +142,31 @@ impl<'a> Frame<'a> {
         let start_index = self.next_index;
         self.next_index += nb_new_images;
         (start_index..(start_index + nb_new_images)).collect()
+    }
+    pub fn draw_text(
+        &mut self,
+        camera: &super::engine::prelude::Camera,
+        position: [f32; 2],
+        scale: [f32; 2],
+        color: [f32; 4],
+        text: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let text = glium_text_rusttype::TextDisplay::new(&self.text, &self.font, text);
+        let matrix = [
+            [position[0], 0.0, 0.0, 0.0],
+            [0.0, position[1], 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 0.1],
+        ];
+        glium_text_rusttype::draw(
+            &text,
+            &self.text,
+            &mut self.frame,
+            matrix,
+            (color[0], color[1], color[2], color[3]),
+        )?;
+
+        Ok(())
     }
     pub fn draw_color(
         &mut self,
@@ -192,6 +233,7 @@ impl<'a> Frame<'a> {
 }
 impl<'a> Drop for Frame<'a> {
     fn drop(&mut self) {
+        println!("Quitting...");
         let _ = self.frame.set_finish();
     }
 }

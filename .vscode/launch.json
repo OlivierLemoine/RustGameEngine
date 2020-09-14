@@ -23,8 +23,8 @@
             "program": "${workspaceFolder}/target/debug/rust_game_engine.exe",
             "args": [
                 "run",
-                // "-p",
-                // "./editor/new_button"
+                "-p",
+                "../Game-1"
             ],
             "stopAtEntry": false,
             "preLaunchTask": "build",

@@ -1,0 +1,14 @@
+ui = true
+
+[position]
+[transform.position]
+x = 0
+y = 0
+[transform.scale]
+x = 0.1
+y = 1
+
+[sprite]
+depth = 100
+color = [0, 0, 1, 1]
+text = "Button"

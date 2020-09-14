@@ -71,9 +71,19 @@ impl<'a> Engine<'a> {
                 }
             }
         }
-        for index in 0..self.objects.len() {
-            self.obj_step(self.objects[index].clone(), &time)?;
+
+        if self
+            .display
+            .done_loading
+            .try_lock()
+            .map(|v| *v)
+            .unwrap_or(false)
+        {
+            for index in 0..self.objects.len() {
+                self.obj_step(self.objects[index].clone(), &time)?;
+            }
         }
+
         self.display.new_frame()
     }
     fn collide(
@@ -87,7 +97,7 @@ impl<'a> Engine<'a> {
             }
         }
 
-        let has_transform = obj.try_borrow()?.transform.is_some();
+        let has_transform = obj.has_transform();
 
         if !has_transform {
             return Ok(false);
@@ -99,7 +109,7 @@ impl<'a> Engine<'a> {
             if obj.ui {
                 p += self.camera.position;
             }
-            systems::physics::raycast_normal(&obj.global_transform().unwrap(), &p)
+            systems::physics::raycast_normal(&obj.global_transform()?, &p)
         };
 
         if has_collide {
@@ -124,10 +134,10 @@ impl<'a> Engine<'a> {
         obj: Rc<RefCell<Object>>,
         time: &Time,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let has_transform = obj.try_borrow()?.transform.is_some();
-        let has_rigidbody = obj.try_borrow()?.rigidbody.is_some();
-        let has_sprite = obj.try_borrow()?.sprite.is_some();
-        let has_script = obj.try_borrow()?.script.is_some();
+        let has_transform = obj.has_transform();
+        let has_rigidbody = obj.has_rigidbody();
+        let has_sprite = obj.has_sprite();
+        let has_script = obj.has_script();
 
         if has_transform {
             if has_rigidbody {
@@ -140,30 +150,57 @@ impl<'a> Engine<'a> {
             }
             if has_sprite {
                 let obj = obj.try_borrow()?;
-                let transform = obj.global_transform().unwrap();
-                let sprite = obj.sprite.as_ref().unwrap();
+                let transform = obj.global_transform()?;
+                let sprite = obj.sprite.as_ref().expect(
+                    "Unable to get the sprite; this should not be possible as it is checked before",
+                );
+
+                match (&sprite.color, &sprite.text) {
+                    (Some(color), Some(text)) => {
+                        let _ = self.display.draw_text(
+                            if obj.ui { &NULL_CAMERA } else { &self.camera },
+                            transform.position.to_array(),
+                            transform.scale.to_array(),
+                            color.clone(),
+                            text,
+                        );
+                    }
+                    (None, Some(text)) => {
+                        let _ = self.display.draw_text(
+                            if obj.ui { &NULL_CAMERA } else { &self.camera },
+                            transform.position.to_array(),
+                            transform.scale.to_array(),
+                            [1.0, 1.0, 1.0, 1.0],
+                            text,
+                        );
+                    }
+                    (Some(color), None) => {
+                        let _ = self.display.draw_color(
+                            if obj.ui { &NULL_CAMERA } else { &self.camera },
+                            transform.position.to_array(),
+                            transform.scale.to_array(),
+                            color.clone(),
+                        );
+                    }
+                    _ => {
+                        let _ = self.display.draw_image(
+                            if obj.ui { &NULL_CAMERA } else { &self.camera },
+                            crate::frame::Image {
+                                position: transform.position.to_array(),
+                                scale: transform.scale.to_array(),
+                                texture: *sprite
+                                    .animations
+                                    .get(sprite.animations.keys().next().unwrap())
+                                    .unwrap()
+                                    .first()
+                                    .unwrap(),
+                            },
+                        );
+                    }
+                }
 
                 if let Some(color) = &sprite.color {
-                    let _ = self.display.draw_color(
-                        if obj.ui { &NULL_CAMERA } else { &self.camera },
-                        transform.position.to_array(),
-                        transform.scale.to_array(),
-                        color.clone(),
-                    );
                 } else {
-                    let _ = self.display.draw_image(
-                        if obj.ui { &NULL_CAMERA } else { &self.camera },
-                        crate::frame::Image {
-                            position: transform.position.to_array(),
-                            scale: transform.scale.to_array(),
-                            texture: *sprite
-                                .animations
-                                .get(sprite.animations.keys().next().unwrap())
-                                .unwrap()
-                                .first()
-                                .unwrap(),
-                        },
-                    );
                 }
             }
         }
