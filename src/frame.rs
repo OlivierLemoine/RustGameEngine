@@ -36,7 +36,8 @@ pub struct Image {
 
 pub struct Program {
     pub texture: glium::Program,
-    pub color: glium::Program,
+    pub rect: glium::Program,
+    pub circle: glium::Program,
 }
 
 pub struct Frame<'a> {
@@ -168,7 +169,7 @@ impl<'a> Frame<'a> {
 
         Ok(())
     }
-    pub fn draw_color(
+    pub fn draw_circle(
         &mut self,
         camera: &super::engine::prelude::Camera,
         position: [f32; 2],
@@ -178,7 +179,30 @@ impl<'a> Frame<'a> {
         self.frame.draw(
             &self.vertex_buffer,
             &self.indices_buffer,
-            &self.program.color,
+            &self.program.circle,
+            &uniform! {
+                cam_position: camera.position.to_array(),
+                cam_zoom: camera.zoom.to_array(),
+                obj_position: position,
+                obj_scale: scale,
+                c: color,
+                window_ratio: if self.current_frame_dim.1 != 0 {self.current_frame_dim.0 / self.current_frame_dim.1} else {1},
+            },
+            &self.parameters,
+        )?;
+        Ok(())
+    }
+    pub fn draw_rect(
+        &mut self,
+        camera: &super::engine::prelude::Camera,
+        position: [f32; 2],
+        scale: [f32; 2],
+        color: [f32; 4],
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.frame.draw(
+            &self.vertex_buffer,
+            &self.indices_buffer,
+            &self.program.rect,
             &uniform! {
                 cam_position: camera.position.to_array(),
                 cam_zoom: camera.zoom.to_array(),

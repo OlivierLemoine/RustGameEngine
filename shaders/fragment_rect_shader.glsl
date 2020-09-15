@@ -3,7 +3,6 @@
 in vec2 v_tex_coords;
 out vec4 color;
 
-uniform vec2 obj_scale;
 uniform vec4 c;
 uniform float window_ratio;
 

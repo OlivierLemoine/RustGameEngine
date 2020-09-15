@@ -47,12 +47,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let program_texture =
         glium::Program::from_source(&display, &vertex_shader_src, &fragment_shader_src, None)?;
 
-    let fragment_color_shader_src =
-        std::fs::read_to_string("./shaders/fragment_color_shader.glsl")?;
-    let program_color = glium::Program::from_source(
+    let fragment_rect_shader_src = std::fs::read_to_string("./shaders/fragment_rect_shader.glsl")?;
+    let program_rect = glium::Program::from_source(
         &display,
         &vertex_shader_src,
-        &fragment_color_shader_src,
+        &fragment_rect_shader_src,
+        None,
+    )?;
+
+    let fragment_circle_shader_src =
+        std::fs::read_to_string("./shaders/fragment_circle_shader.glsl")?;
+    let program_circle = glium::Program::from_source(
+        &display,
+        &vertex_shader_src,
+        &fragment_circle_shader_src,
         None,
     )?;
 
@@ -61,7 +69,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         drawing_params,
         frame::Program {
             texture: program_texture,
-            color: program_color,
+            rect: program_rect,
+            circle: program_circle,
         },
         &std::path::PathBuf::from({
             let mut tmp = run_path.clone();

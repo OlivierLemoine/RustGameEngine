@@ -175,10 +175,11 @@ pub fn load_object(
                     };
                     image_name_to_index.insert(name, indices);
                 }
-                self_obj
-                    .sprite
-                    .as_mut()
-                    .map(|mut s| s.animations = image_name_to_index);
+                self_obj.sprite.as_mut().map(|mut s| {
+                    s.ty = SpriteType::Animation {
+                        animations: image_name_to_index,
+                    }
+                });
                 Some(())
             })
         });

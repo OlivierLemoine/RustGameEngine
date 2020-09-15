@@ -1,0 +1,2 @@
+[children]
+scene = { path = "../../Game-1/scenes/test_scene/scene.toml" }

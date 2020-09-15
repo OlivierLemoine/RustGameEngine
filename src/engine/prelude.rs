@@ -3,7 +3,7 @@ pub use camera::{Camera, NULL_CAMERA};
 pub use components::{
     rigidbody::Rigidbody,
     script::{OnClick, ParseCustomObject, Script, Update},
-    sprite::Sprite,
+    sprite::{Sprite, SpriteType},
     transform::Transform,
 };
 pub use loader::Image;

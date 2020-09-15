@@ -63,10 +63,24 @@ impl<'a> Engine<'a> {
                 Event::LeftClickOn(mut position) => {
                     position -= self.camera.position;
 
-                    for index in (0..self.objects.len()).rev() {
-                        if self.collide(self.objects[index].clone(), position)? {
-                            break;
+                    let mut res = None;
+
+                    fn try_change_res(
+                        curr: Option<(Rc<RefCell<Object>>, u32)>,
+                        new: (Rc<RefCell<Object>>, u32),
+                    ) -> Option<(Rc<RefCell<Object>>, u32)> {
+                        match curr {
+                            None => Some(new),
+                            Some((_, v)) if v < new.1 => Some(new),
+                            x => x,
                         }
+                    };
+
+                    for index in 0..self.objects.len() {
+                        res = self
+                            .collide(self.objects[index].clone(), position)?
+                            .map(|v| try_change_res(res, v))
+                            .flatten();
                     }
                 }
             }
@@ -90,44 +104,62 @@ impl<'a> Engine<'a> {
         &self,
         obj: Rc<RefCell<Object>>,
         point: Vector,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
-        for child in obj.try_borrow()?.children.iter().map(|v| v.clone()) {
-            if self.collide(child, point)? {
-                return Ok(true);
+    ) -> Result<Option<(Rc<RefCell<Object>>, u32)>, Box<dyn std::error::Error>> {
+        let mut res = None;
+
+        fn try_change_res(
+            curr: Option<(Rc<RefCell<Object>>, u32)>,
+            new: (Rc<RefCell<Object>>, u32),
+        ) -> Option<(Rc<RefCell<Object>>, u32)> {
+            match curr {
+                None => Some(new),
+                Some((_, v)) if v < new.1 => Some(new),
+                x => x,
             }
-        }
-
-        let has_transform = obj.has_transform();
-
-        if !has_transform {
-            return Ok(false);
-        }
-
-        let has_collide = {
-            let obj = &obj.try_borrow()?;
-            let mut p = point.clone();
-            if obj.ui {
-                p += self.camera.position;
-            }
-            systems::physics::raycast_normal(&obj.global_transform()?, &p)
         };
 
-        if has_collide {
-            if let Some(Some(f)) = {
-                let obj = &*obj.try_borrow()?;
-                obj.script.as_ref().map(|s| {
-                    let lib = self.libs.get(&s.lib)?;
-                    unsafe { lib.get::<fn() -> prelude::OnClick>(b"on_click") }.ok()
-                })
+        if obj.has_transform() {
+            if let Some(depth) = {
+                let obj = &obj.try_borrow()?;
+                let mut p = point.clone();
+                if obj.ui {
+                    p += self.camera.position;
+                }
+                if systems::physics::raycast_normal(&obj.global_transform()?, &p) {
+                    Some(obj.transform.as_ref().unwrap().depth)
+                } else {
+                    None
+                }
             } {
-                let f = f();
-                f(&mut *obj.try_borrow_mut()?);
+                res = try_change_res(res, (obj.clone(), depth));
             }
-
-            Ok(true)
-        } else {
-            Ok(false)
         }
+
+        for child in obj.try_borrow()?.children.iter().map(|v| v.clone()) {
+            res = self
+                .collide(child, point)?
+                .map(|v| try_change_res(res, v))
+                .flatten();
+        }
+
+        Ok(res)
+
+        // if has_collide {
+        //     if let Some(Some(f)) = {
+        //         let obj = &*obj.try_borrow()?;
+        //         obj.script.as_ref().map(|s| {
+        //             let lib = self.libs.get(&s.lib)?;
+        //             unsafe { lib.get::<fn() -> prelude::OnClick>(b"on_click") }.ok()
+        //         })
+        //     } {
+        //         let f = f();
+        //         f(&mut *obj.try_borrow_mut()?);
+        //     }
+
+        //     Ok(true)
+        // } else {
+        //     Ok(false)
+        // }
     }
     fn obj_step(
         &mut self,
@@ -155,52 +187,46 @@ impl<'a> Engine<'a> {
                     "Unable to get the sprite; this should not be possible as it is checked before",
                 );
 
-                match (&sprite.color, &sprite.text) {
-                    (Some(color), Some(text)) => {
-                        let _ = self.display.draw_text(
-                            if obj.ui { &NULL_CAMERA } else { &self.camera },
-                            transform.position.to_array(),
-                            transform.scale.to_array(),
-                            color.clone(),
-                            text,
-                        );
-                    }
-                    (None, Some(text)) => {
-                        let _ = self.display.draw_text(
-                            if obj.ui { &NULL_CAMERA } else { &self.camera },
-                            transform.position.to_array(),
-                            transform.scale.to_array(),
-                            [1.0, 1.0, 1.0, 1.0],
-                            text,
-                        );
-                    }
-                    (Some(color), None) => {
-                        let _ = self.display.draw_color(
-                            if obj.ui { &NULL_CAMERA } else { &self.camera },
-                            transform.position.to_array(),
-                            transform.scale.to_array(),
-                            color.clone(),
-                        );
-                    }
-                    _ => {
+                match &sprite.ty {
+                    SpriteType::Animation { animations } => {
                         let _ = self.display.draw_image(
                             if obj.ui { &NULL_CAMERA } else { &self.camera },
                             crate::frame::Image {
                                 position: transform.position.to_array(),
                                 scale: transform.scale.to_array(),
-                                texture: *sprite
-                                    .animations
-                                    .get(sprite.animations.keys().next().unwrap())
+                                texture: *animations
+                                    .get(animations.keys().next().unwrap())
                                     .unwrap()
                                     .first()
                                     .unwrap(),
                             },
                         );
                     }
-                }
-
-                if let Some(color) = &sprite.color {
-                } else {
+                    SpriteType::Text { text, color } => {
+                        let _ = self.display.draw_text(
+                            if obj.ui { &NULL_CAMERA } else { &self.camera },
+                            transform.position.to_array(),
+                            transform.scale.to_array(),
+                            color.clone(),
+                            text,
+                        );
+                    }
+                    SpriteType::Rect { color } => {
+                        let _ = self.display.draw_rect(
+                            if obj.ui { &NULL_CAMERA } else { &self.camera },
+                            transform.position.to_array(),
+                            transform.scale.to_array(),
+                            color.clone(),
+                        );
+                    }
+                    SpriteType::Circle { color } => {
+                        let _ = self.display.draw_circle(
+                            if obj.ui { &NULL_CAMERA } else { &self.camera },
+                            transform.position.to_array(),
+                            transform.scale.to_array(),
+                            color.clone(),
+                        );
+                    }
                 }
             }
         }
