@@ -1,21 +1,13 @@
 #![allow(dead_code)]
 
+use super::Vector;
 use serde::Deserialize;
 
 trait Polynom {
     fn at(&self, at: f32) -> f32;
 }
-impl Polynom for () {
-    fn at(&self, _: f32) -> f32 {
-        0.0
-    }
-}
-impl Polynom for f32 {
-    fn at(&self, _: f32) -> f32 {
-        *self
-    }
-}
 impl Polynom for (f32, f32) {
+    #[inline]
     fn at(&self, at: f32) -> f32 {
         self.0 * at + self.1
     }
@@ -35,28 +27,89 @@ impl PolyTo<(f32, f32)> for ((f32, f32), (f32, f32)) {
 }
 
 #[derive(Debug, Default, Clone, Deserialize)]
-pub struct Curve {
-    values: Vec<(f32, f32)>,
-}
-
-impl Curve {
+pub struct Curve<T>(Vec<T>);
+impl Curve<(f32, f32)> {
     pub fn sample(&self, at: f32) -> f32 {
-        match self.values.len() {
-            0 => ().at(at),
-            1 => (self.values[0].1).at(at),
-            2 => (self.values[1], self.values[0]).to_polynom().at(at),
+        match self.0.len() {
+            0 => 0.0,
+            1 => self.0[0].1,
+            2 => (self.0[1], self.0[0]).to_polynom().at(at),
             _ => {
-                if at <= self.values[0].0 {
-                    (self.values[1], self.values[0]).to_polynom().at(at)
-                } else if at >= self.values.last().unwrap().0 {
-                    let last_index = self.values.len() - 1;
-                    (self.values[last_index], self.values[last_index - 1])
+                if at <= self.0[0].0 {
+                    (self.0[1], self.0[0]).to_polynom().at(at)
+                } else if at >= self.0.last().unwrap().0 {
+                    let last_index = self.0.len() - 1;
+                    (self.0[last_index], self.0[last_index - 1])
                         .to_polynom()
                         .at(at)
                 } else {
-                    for (i, (x, _)) in self.values.iter().enumerate() {
+                    for (i, (x, _)) in self.0.iter().enumerate() {
                         if at <= *x {
-                            return (self.values[i], self.values[i - 1]).to_polynom().at(at);
+                            return (self.0[i], self.0[i - 1]).to_polynom().at(at);
+                        }
+                    }
+                    panic!("Unexpected end of algo");
+                }
+            }
+        }
+    }
+}
+impl Curve<(f32, Vector)> {
+    pub fn sample(&self, at: f32) -> Vector {
+        match self.0.len() {
+            0 => Vector::zero(),
+            1 => self.0[0].1,
+            2 => Vector::new(
+                ((self.0[1].0, self.0[1].1.x), (self.0[0].0, self.0[0].1.x))
+                    .to_polynom()
+                    .at(at),
+                ((self.0[1].0, self.0[1].1.y), (self.0[0].0, self.0[0].1.y))
+                    .to_polynom()
+                    .at(at),
+            ),
+            _ => {
+                if at <= self.0[0].0 {
+                    Vector::new(
+                        ((self.0[1].0, self.0[1].1.x), (self.0[0].0, self.0[0].1.x))
+                            .to_polynom()
+                            .at(at),
+                        ((self.0[1].0, self.0[1].1.y), (self.0[0].0, self.0[0].1.y))
+                            .to_polynom()
+                            .at(at),
+                    )
+                } else if at >= self.0.last().unwrap().0 {
+                    let last_index = self.0.len() - 1;
+                    Vector::new(
+                        (
+                            (self.0[last_index].0, self.0[last_index].1.x),
+                            (self.0[last_index - 1].0, self.0[last_index - 1].1.x),
+                        )
+                            .to_polynom()
+                            .at(at),
+                        (
+                            (self.0[last_index].0, self.0[last_index].1.y),
+                            (self.0[last_index - 1].0, self.0[last_index - 1].1.y),
+                        )
+                            .to_polynom()
+                            .at(at),
+                    )
+                } else {
+                    for (i, (x, _)) in self.0.iter().enumerate() {
+                        if at <= *x {
+                            return Vector::new(
+                                (
+                                    (self.0[i].0, self.0[i].1.x),
+                                    (self.0[i - 1].0, self.0[i - 1].1.x),
+                                )
+                                    .to_polynom()
+                                    .at(at),
+                                (
+                                    (self.0[i].0, self.0[i].1.y),
+                                    (self.0[i - 1].0, self.0[i - 1].1.y),
+                                )
+                                    .to_polynom()
+                                    .at(at),
+                            );
                         }
                     }
                     panic!("Unexpected end of algo");
