@@ -143,23 +143,6 @@ impl<'a> Engine<'a> {
         }
 
         Ok(res)
-
-        // if has_collide {
-        //     if let Some(Some(f)) = {
-        //         let obj = &*obj.try_borrow()?;
-        //         obj.script.as_ref().map(|s| {
-        //             let lib = self.libs.get(&s.lib)?;
-        //             unsafe { lib.get::<fn() -> prelude::OnClick>(b"on_click") }.ok()
-        //         })
-        //     } {
-        //         let f = f();
-        //         f(&mut *obj.try_borrow_mut()?);
-        //     }
-
-        //     Ok(true)
-        // } else {
-        //     Ok(false)
-        // }
     }
     fn obj_step(
         &mut self,
